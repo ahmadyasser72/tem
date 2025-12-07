@@ -1,0 +1,24 @@
+@import "tailwindcss";
+@plugin "daisyui" {
+	themes:
+		pastel --default,
+		night --prefersdark;
+	exclude: rootscrollgutter, properties;
+	logs: false;
+}
+
+.htmx-indicator:not(.htmx-request) {
+	@apply hidden;
+}
+
+.htmx-request:not(.htmx-indicator) {
+	@apply opacity-50;
+}
+
+iconify-icon {
+	@apply inline-block size-5;
+
+	:is(.navbar, .drawer-side) & {
+		@apply my-1;
+	}
+}
