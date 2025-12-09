@@ -1,5 +1,6 @@
 {
 	"name": "magang",
+	"type": "module",
 	"private": true,
 	"scripts": {
 		"dev": "tailwindcss --input app.css --output styles.css --watch",

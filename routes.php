@@ -2,7 +2,24 @@
 
 require_once __DIR__ . "/router.php";
 
-get("/dashboard", "views/dashboard.php");
+get("/dashboard", "views/dashboard/index.php");
+
+get("/dashboard/organisasi/pangkat", "views/dashboard/organisasi/pangkat.php");
+get("/dashboard/organisasi/jabatan", "views/dashboard/organisasi/jabatan.php");
+get(
+	"/dashboard/organisasi/unit-kerja",
+	"views/dashboard/organisasi/unit_kerja.php",
+);
+get("/dashboard/organisasi/pegawai", "views/dashboard/organisasi/pegawai.php");
+
+post("/dashboard/organisasi/pangkat", "crud/organisasi/pangkat.php");
+post("/dashboard/organisasi/jabatan", "crud/organisasi/jabatan.php");
+post(
+	"/dashboard/organisasi/unit-kerja",
+	"crud/organisasi/unit_kerja.php",
+);
+post("/dashboard/organisasi/pegawai", "crud/organisasi/pegawai.php");
+
 any("/404", "views/404.php");
 
 // // ##################################################

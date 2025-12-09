@@ -1,5 +1,7 @@
-# dependencies (bun install)
+# dependencies (bun)
 node_modules
+# dependencies (composer)
+/vendor/
 
 # output
 out

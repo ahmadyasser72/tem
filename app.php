@@ -1,5 +1,12 @@
 <?php
 
+require_once __DIR__ . "/vendor/autoload.php";
+
+$db = new mysqli("localhost", "root", "", "pekaeel");
+if ($db->connect_error) {
+	die("Koneksi gagal: " . $db->connect_error);
+}
+
 ob_start();
 require_once __DIR__ . "/routes.php";
 $page = ob_get_clean();
@@ -19,6 +26,7 @@ $title = htmlentities($title);
 
   <script src="https://cdn.jsdelivr.net/npm/htmx.org@2.0.8/dist/htmx.min.js" integrity="sha384-/TgkGk7p307TH7EXJDuUlgG3Ce1UVolAOFopFekQkkXihi5u/6OCvVKyz1W+idaz" crossorigin="anonymous"></script>
   <script src="https://cdn.jsdelivr.net/npm/iconify-icon@3.0.2/dist/iconify-icon.min.js" integrity="sha256-Am/FVmljwtoGse/9sLaiw+q1O2G65SznGIbU3ErcSQw=" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
   <script>
     document.addEventListener("DOMContentLoaded", () => {

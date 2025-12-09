@@ -38,6 +38,7 @@ function any($route, $path_to_include)
 $ROUTE_FOUND = false;
 function route($route, $path_to_include)
 {
+	global $db;
 	global $ROUTE_FOUND;
 	if ($ROUTE_FOUND) {
 		return;
