@@ -1,22 +1,22 @@
 <?php
 
 if (($_GET["print"] ?? "") == "1") {
-    $mpdf = new \Mpdf\Mpdf([
-        "format" => "A4",
-        "margin_left" => 10,
-        "margin_right" => 10,
-        "margin_top" => 15,
-        "margin_bottom" => 15,
-    ]);
+	$mpdf = new \Mpdf\Mpdf([
+		"format" => "A4",
+		"margin_left" => 10,
+		"margin_right" => 10,
+		"margin_top" => 15,
+		"margin_bottom" => 15,
+	]);
 
-    // ambil data dari database
-    $sql = "SELECT kode_pangkat, nama_pangkat, golongan, keterangan
+	// ambil data dari database
+	$sql = "SELECT kode_pangkat, nama_pangkat, golongan, keterangan
             FROM pangkat
             ORDER BY golongan, nama_pangkat";
-    $result = $db->query($sql);
+	$result = $db->query($sql);
 
-    // buat HTML untuk tabel
-    $html = '
+	// buat HTML untuk tabel
+	$html = '
         <h2 style="text-align:center;">Laporan Pangkat</h2>
         <table border="1" cellspacing="0" cellpadding="5" width="100%">
             <thead style="background-color:#0066CC; color:white;">
@@ -30,30 +30,30 @@ if (($_GET["print"] ?? "") == "1") {
             <tbody>
         ';
 
-    $fill = false;
-    while ($row = $result->fetch_assoc()) {
-        $bg = $fill ? "background-color:#E0EBFF;" : "";
-        $html .= '<tr style="' . $bg . '">';
-        $html .=
-            '<td style="text-align:center;">' . $row["kode_pangkat"] . "</td>";
-        $html .= "<td>" . $row["nama_pangkat"] . "</td>";
-        $html .= '<td style="text-align:center;">' . $row["golongan"] . "</td>";
-        $html .= "<td>" . $row["keterangan"] . "</td>";
-        $html .= "</tr>";
-        $fill = !$fill;
-    }
+	$fill = false;
+	while ($row = $result->fetch_assoc()) {
+		$bg = $fill ? "background-color:#E0EBFF;" : "";
+		$html .= '<tr style="' . $bg . '">';
+		$html .=
+			'<td style="text-align:center;">' . $row["kode_pangkat"] . "</td>";
+		$html .= "<td>" . $row["nama_pangkat"] . "</td>";
+		$html .= '<td style="text-align:center;">' . $row["golongan"] . "</td>";
+		$html .= "<td>" . $row["keterangan"] . "</td>";
+		$html .= "</tr>";
+		$fill = !$fill;
+	}
 
-    $html .= '
+	$html .= '
             </tbody>
         </table>
     ';
 
-    // tulis HTML ke mPDF
-    $mpdf->WriteHTML($html);
+	// tulis HTML ke mPDF
+	$mpdf->WriteHTML($html);
 
-    // output PDF ke browser
-    $mpdf->Output("laporan_pangkat.pdf", "I");
-    exit();
+	// output PDF ke browser
+	$mpdf->Output("laporan_pangkat.pdf", "I");
+	exit();
 }
 
 $title = "Organisasi - Pangkat";
@@ -61,28 +61,33 @@ $title = "Organisasi - Pangkat";
 $search = false;
 $keyword = trim($_GET["search"] ?? "");
 if ($keyword !== "") {
-    $search = true;
+	$search = true;
 
-    $stmt = $db->prepare("
+	$stmt = $db->prepare("
         SELECT * FROM pangkat
         WHERE kode_pangkat LIKE ?
            OR nama_pangkat LIKE ?
            OR golongan LIKE ?
         ORDER BY id_pangkat ASC
     ");
-    $like = "%$keyword%";
-    $stmt->bind_param("sss", $like, $like, $like);
-    $stmt->execute();
-    $rows = $stmt->get_result();
+	$like = "%$keyword%";
+	$stmt->bind_param("sss", $like, $like, $like);
+	$stmt->execute();
+	$rows = $stmt->get_result();
 } else {
-    $query = "SELECT * FROM pangkat ORDER BY id_pangkat ASC";
-    $rows = $db->query($query);
+	$query = "SELECT * FROM pangkat ORDER BY id_pangkat ASC";
+	$rows = $db->query($query);
 }
 ?>
 
 <div class="flex max-sm:flex-col gap-y-4 sm:justify-between">
     <div class="flex gap-2">
-        <button class="btn btn-primary" onclick="create_modal.showModal()">Tambah pangkat</button>
+        <button
+            hx-get="/fragments/form/pangkat"
+            hx-target="body"
+            hx-swap="beforeend"
+            class="btn btn-primary"
+            >Tambah pangkat</button>
         <a target="_blank" href="?print=1" class="btn btn-secondary">Laporan pangkat</a>
     </div>
 
@@ -122,25 +127,19 @@ if ($keyword !== "") {
                         <td><?= htmlspecialchars($row["golongan"]) ?></td>
                         <td class="flex gap-2">
                             <button
+                                hx-get="/fragments/form/pangkat/<?= $row[
+                                	"id_pangkat"
+                                ] ?>"
+                                hx-target="body"
+                                hx-swap="beforeend"
                                 class="btn btn-sm btn-warning"
-                                onclick="openEditModal(this)"
-                                data-id="<?= $row["id_pangkat"] ?>"
-                                data-kode="<?= htmlspecialchars(
-                                                $row["kode_pangkat"],
-                                            ) ?>"
-                                data-nama="<?= htmlspecialchars(
-                                                $row["nama_pangkat"],
-                                            ) ?>"
-                                data-golongan="<?= htmlspecialchars(
-                                                    $row["golongan"],
-                                                ) ?>"
-                                data-keterangan="<?= htmlspecialchars(
-                                                        $row["keterangan"],
-                                                    ) ?>">Edit</button>
+                                >Edit</button>
 
                             <button
                                 class="btn btn-sm btn-error"
-                                onclick="openDeleteModal(<?= $row["id_pangkat"] ?>)">Hapus</button>
+                                onclick="openDeleteModal(<?= $row[
+                                	"id_pangkat"
+                                ] ?>)">Hapus</button>
                         </td>
                     </tr>
                 <?php endwhile; ?>
@@ -148,8 +147,8 @@ if ($keyword !== "") {
                 <tr>
                     <td colspan="5" class="text-center">
                         <?= $search
-                            ? "Pangkat tidak ditemukan."
-                            : "Belum ada data pangkat." ?>
+                        	? "Pangkat tidak ditemukan."
+                        	: "Belum ada data pangkat." ?>
                     </td>
                 </tr>
             <?php endif; ?>
@@ -158,95 +157,6 @@ if ($keyword !== "") {
     </table>
 </div>
 
-
-<dialog id="create_modal" class="modal modal-bottom sm:modal-middle">
-    <div class="modal-box space-y-4">
-
-        <form method="dialog">
-            <button class="btn btn-sm btn-circle btn-ghost absolute right-2 top-2">✕</button>
-        </form>
-
-        <h3 class="text-lg font-bold">Tambah Pangkat</h3>
-
-        <form method="POST" class="space-y-4">
-            <input type="hidden" name="type" value="create">
-
-            <label class="floating-label">
-                <span>Kode Pangkat</span>
-                <input type="text" name="kode_pangkat" class="input input-md w-full" required />
-            </label>
-
-            <label class="floating-label">
-                <span>Nama Pangkat</span>
-                <input type="text" name="nama_pangkat" class="input input-md w-full" required />
-            </label>
-
-            <label class="floating-label">
-                <span>Golongan</span>
-                <input type="text" name="golongan" class="input input-md w-full" />
-            </label>
-
-            <label class="floating-label">
-                <span>Keterangan</span>
-                <textarea name="keterangan" class="textarea w-full"></textarea>
-            </label>
-
-            <div class="modal-action">
-                <button type="submit" class="btn btn-primary">Simpan</button>
-                <button type="button" class="btn" onclick="create_modal.close()">Batal</button>
-            </div>
-        </form>
-    </div>
-
-    <form method="dialog" class="modal-backdrop">
-        <button>close</button>
-    </form>
-</dialog>
-
-<dialog id="edit_modal" class="modal modal-bottom sm:modal-middle">
-    <div class="modal-box space-y-4">
-
-        <form method="dialog">
-            <button class="btn btn-sm btn-circle btn-ghost absolute right-2 top-2">✕</button>
-        </form>
-
-        <h3 class="text-lg font-bold">Edit Pangkat</h3>
-
-        <form method="POST" class="space-y-4">
-            <input type="hidden" name="type" value="edit">
-            <input type="hidden" name="id_pangkat" id="edit_id">
-
-            <label class="floating-label">
-                <span>Kode Pangkat</span>
-                <input type="text" name="kode_pangkat" id="edit_kode" class="input input-md w-full" required />
-            </label>
-
-            <label class="floating-label">
-                <span>Nama Pangkat</span>
-                <input type="text" name="nama_pangkat" id="edit_nama" class="input input-md w-full" required />
-            </label>
-
-            <label class="floating-label">
-                <span>Golongan</span>
-                <input type="text" name="golongan" id="edit_golongan" class="input input-md w-full" />
-            </label>
-
-            <label class="floating-label">
-                <span>Keterangan</span>
-                <textarea name="keterangan" id="edit_keterangan" class="textarea w-full"></textarea>
-            </label>
-
-            <div class="modal-action">
-                <button type="submit" class="btn btn-primary">Update</button>
-                <button type="button" class="btn" onclick="edit_modal.close()">Batal</button>
-            </div>
-        </form>
-    </div>
-
-    <form method="dialog" class="modal-backdrop">
-        <button>close</button>
-    </form>
-</dialog>
 
 <dialog id="delete_modal" class="modal modal-bottom sm:modal-middle">
     <div class="modal-box">
@@ -276,15 +186,6 @@ if ($keyword !== "") {
 
 
 <script>
-    function openEditModal(btn) {
-        document.getElementById('edit_id').value = btn.dataset.id;
-        document.getElementById('edit_kode').value = btn.dataset.kode;
-        document.getElementById('edit_nama').value = btn.dataset.nama;
-        document.getElementById('edit_golongan').value = btn.dataset.golongan;
-        document.getElementById('edit_keterangan').value = btn.dataset.keterangan;
-        edit_modal.showModal();
-    }
-
     function openDeleteModal(id) {
         document.getElementById('delete_id').value = id;
         delete_modal.showModal();

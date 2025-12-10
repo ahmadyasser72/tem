@@ -1,11 +1,8 @@
 <?php
 
+require_once __DIR__ . "/database.php";
+require_once __DIR__ . "/utilities.php";
 require_once __DIR__ . "/vendor/autoload.php";
-
-$db = new mysqli("localhost", "root", "", "pekaeel");
-if ($db->connect_error) {
-	die("Koneksi gagal: " . $db->connect_error);
-}
 
 ob_start();
 require_once __DIR__ . "/routes.php";
@@ -39,6 +36,10 @@ $title = htmlentities($title);
       if (e.target instanceof HTMLInputElement && e.target.matches(".theme-controller")) {
         localStorage.setItem("theme", e.target.value);
       }
+    })
+
+    htmx.onLoad((element)=> {
+      if (element instanceof HTMLDialogElement) element.showModal();
     })
   </script>
 </head>

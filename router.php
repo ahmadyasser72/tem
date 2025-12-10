@@ -102,6 +102,11 @@ function route($route, $path_to_include)
 	}
 
 	include_once __DIR__ . "/$path_to_include";
+
+	if (str_starts_with($route, "/fragments")) {
+		exit();
+	}
+
 	return;
 }
 function out($text)

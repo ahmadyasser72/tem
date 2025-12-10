@@ -1,5 +1,4 @@
--- Tabel Master: Pangkat (Golongan/Pangkat)
-CREATE TABLE pangkat (
+CREATE TABLE IF NOT EXISTS pangkat (
     id_pangkat INT PRIMARY KEY AUTO_INCREMENT,
     kode_pangkat VARCHAR(10) NOT NULL UNIQUE,
     nama_pangkat VARCHAR(50) NOT NULL,
@@ -9,8 +8,7 @@ CREATE TABLE pangkat (
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
 );
 
--- Tabel Master: Jabatan (Struktural/Fungsional)
-CREATE TABLE jabatan (
+CREATE TABLE IF NOT EXISTS jabatan (
     id_jabatan INT PRIMARY KEY AUTO_INCREMENT,
     kode_jabatan VARCHAR(10) NOT NULL UNIQUE,
     nama_jabatan VARCHAR(50) NOT NULL,
@@ -21,8 +19,7 @@ CREATE TABLE jabatan (
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
 );
 
--- Tabel Master: Unit Kerja (Struktur Organisasi)
-CREATE TABLE unit_kerja (
+CREATE TABLE IF NOT EXISTS unit_kerja (
     id_unit INT PRIMARY KEY AUTO_INCREMENT,
     kode_unit VARCHAR(10) NOT NULL UNIQUE,
     nama_unit VARCHAR(50) NOT NULL,
@@ -34,12 +31,10 @@ CREATE TABLE unit_kerja (
     kepala_unit INT NULL,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-    FOREIGN KEY (induk_unit) REFERENCES unit_kerja(id_unit) ON DELETE SET NULL,
-    FOREIGN KEY (kepala_unit) REFERENCES pegawai(id_pegawai) ON DELETE SET NULL 
+    FOREIGN KEY (induk_unit) REFERENCES unit_kerja(id_unit) ON DELETE SET NULL
 );
 
--- Tabel Master: Pegawai (Personil Pemadam)
-CREATE TABLE pegawai (
+CREATE TABLE IF NOT EXISTS pegawai (
     id_pegawai INT PRIMARY KEY AUTO_INCREMENT,
     nip VARCHAR(30) NOT NULL UNIQUE,
     nama_lengkap VARCHAR(100) NOT NULL,
@@ -67,7 +62,10 @@ CREATE TABLE pegawai (
     FOREIGN KEY (id_unit) REFERENCES unit_kerja(id_unit)
 );
 
--- Indeks untuk pencarian cepat
+ALTER TABLE unit_kerja
+ADD CONSTRAINT fk_kepala_unit
+FOREIGN KEY (kepala_unit) REFERENCES pegawai(id_pegawai) ON DELETE SET NULL;
+
 CREATE INDEX idx_pegawai_nama ON pegawai(nama_lengkap);
 CREATE INDEX idx_pegawai_nip ON pegawai(nip);
 CREATE INDEX idx_pegawai_status ON pegawai(status_pegawai, is_active);

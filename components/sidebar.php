@@ -19,7 +19,7 @@ $items = [
 	[
 		"label" => "Unit Kerja",
 		"icon" => "lucide:building-2",
-		"url" => "/dashboard/organisasi/unit-kerja",
+		"url" => "/dashboard/organisasi/unit_kerja",
 	],
 	[
 		"label" => "Pegawai",
@@ -47,21 +47,19 @@ $items = [
 					<a
 						href="<?= htmlspecialchars($item["url"]) ?>"
 						class="<?= implode(
-											" ",
-											array_filter([
-												"is-drawer-close:tooltip is-drawer-close:tooltip-right",
-												$_SERVER["REQUEST_URI"] === $item["url"]
-													? "menu-active"
-													: "",
-											]),
-										) ?>"
+      	" ",
+      	array_filter([
+      		"is-drawer-close:tooltip is-drawer-close:tooltip-right",
+      		$_SERVER["REQUEST_URI"] === $item["url"] ? "menu-active" : "",
+      	]),
+      ) ?>"
 						data-tip="<?= htmlspecialchars($item["label"]) ?>">
 						<iconify-icon icon="<?= htmlspecialchars(
-																	$item["icon"],
-																) ?>" width="none"></iconify-icon>
+      	$item["icon"],
+      ) ?>" width="none"></iconify-icon>
 						<span class="is-drawer-close:hidden"><?= htmlspecialchars(
-																										$item["label"],
-																									) ?></span>
+      	$item["label"],
+      ) ?></span>
 					</a>
 				</li>
 			<?php endforeach; ?>
