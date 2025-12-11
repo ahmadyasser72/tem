@@ -151,6 +151,7 @@ if ($keyword !== "") {
     <table class="table table-zebra w-full">
         <thead>
             <tr>
+                <th></th>
                 <th>#</th>
                 <th>NIP</th>
                 <th>Nama</th>
@@ -165,6 +166,21 @@ if ($keyword !== "") {
             <?php if ($rows->num_rows > 0): ?>
                 <?php while ($row = $rows->fetch_assoc()): ?>
                     <tr>
+                        <td>
+                            <?php if (
+                            	$row["foto_profil"] &&
+                            	file_exists(
+                            		"uploads/pegawai/" . $row["foto_profil"],
+                            	)
+                            ): ?>
+                                <img src="uploads/pegawai/<?= $row[
+                                	"foto_profil"
+                                ] ?>"
+                                    alt="foto"
+                                    class="size-12 border-box object-cover">
+                            <?php endif; ?>
+                        </td>
+
                         <th><?= $row["id_pegawai"] ?></th>
                         <td><?= htmlspecialchars($row["nip"]) ?></td>
                         <td><?= htmlspecialchars($row["nama_lengkap"]) ?></td>

@@ -22,13 +22,37 @@ if (isset($_POST["type"])) {
 		$darah = $_POST["darah"];
 		$keterangan = $_POST["keterangan"];
 
+		// -----------------------
+		// HANDLE FOTO PROFIL
+		// -----------------------
+		$filename = null;
+
+		if (!empty($_FILES["foto_profil"]["name"])) {
+			$ext = pathinfo($_FILES["foto_profil"]["name"], PATHINFO_EXTENSION);
+			$filename = "pegawai_" . time() . "_" . rand(100, 999) . "." . $ext;
+
+			$folder = "uploads/pegawai/";
+
+			if (!is_dir($folder)) {
+				mkdir($folder, 0777, true);
+			}
+
+			move_uploaded_file(
+				$_FILES["foto_profil"]["tmp_name"],
+				$folder . $filename,
+			);
+		}
+
 		$stmt = $db->prepare("
-            INSERT INTO pegawai
-            (nip, nama_lengkap, tempat_lahir, tanggal_lahir, jenis_kelamin, agama, status_perkawinan, alamat_rumah, telepon, email, id_pangkat, id_jabatan, id_unit, tanggal_masuk, status_pegawai, darah, keterangan)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-        ");
+        INSERT INTO pegawai
+        (nip, nama_lengkap, tempat_lahir, tanggal_lahir, jenis_kelamin, agama, status_perkawinan,
+        alamat_rumah, telepon, email, id_pangkat, id_jabatan, id_unit, tanggal_masuk,
+        status_pegawai, darah, keterangan, foto_profil)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    ");
+
 		$stmt->bind_param(
-			"ssssssssssiiissss",
+			"ssssssssssiiisssss",
 			$nip,
 			$nama,
 			$tempat,
@@ -46,7 +70,9 @@ if (isset($_POST["type"])) {
 			$status_pegawai,
 			$darah,
 			$keterangan,
+			$filename,
 		);
+
 		$stmt->execute();
 		$stmt->close();
 
@@ -74,13 +100,44 @@ if (isset($_POST["type"])) {
 		$darah = $_POST["darah"];
 		$keterangan = $_POST["keterangan"];
 
+		// Ambil foto lama
+		$result = $db->query(
+			"SELECT foto_profil FROM pegawai WHERE id_pegawai = '$id'",
+		);
+		$old = $result->fetch_assoc();
+		$foto_lama = $old["foto_profil"];
+
+		// -----------------------
+		// HANDLE FOTO PROFIL
+		// -----------------------
+		$filename = $foto_lama;
+
+		if (!empty($_FILES["foto_profil"]["name"])) {
+			// hapus foto lama
+			if ($foto_lama && file_exists("uploads/pegawai/" . $foto_lama)) {
+				unlink("uploads/pegawai/" . $foto_lama);
+			}
+
+			$ext = pathinfo($_FILES["foto_profil"]["name"], PATHINFO_EXTENSION);
+			$filename = "pegawai_" . time() . "_" . rand(100, 999) . "." . $ext;
+
+			$folder = "uploads/pegawai/";
+			move_uploaded_file(
+				$_FILES["foto_profil"]["tmp_name"],
+				$folder . $filename,
+			);
+		}
+
 		$stmt = $db->prepare("
-            UPDATE pegawai SET
-            nip = ?, nama_lengkap = ?, tempat_lahir = ?, tanggal_lahir = ?, jenis_kelamin = ?, agama = ?, status_perkawinan = ?, alamat_rumah = ?, telepon = ?, email = ?, id_pangkat = ?, id_jabatan = ?, id_unit = ?, tanggal_masuk = ?, status_pegawai = ?, darah = ?, keterangan = ?
-            WHERE id_pegawai = ?
-        ");
+        UPDATE pegawai SET
+        nip=?, nama_lengkap=?, tempat_lahir=?, tanggal_lahir=?, jenis_kelamin=?, agama=?, status_perkawinan=?,
+        alamat_rumah=?, telepon=?, email=?, id_pangkat=?, id_jabatan=?, id_unit=?,
+        tanggal_masuk=?, status_pegawai=?, darah=?, keterangan=?, foto_profil=?
+        WHERE id_pegawai=?
+    ");
+
 		$stmt->bind_param(
-			"ssssssssssiiissssi",
+			"ssssssssssiiisssssi",
 			$nip,
 			$nama,
 			$tempat,
@@ -98,8 +155,10 @@ if (isset($_POST["type"])) {
 			$status_pegawai,
 			$darah,
 			$keterangan,
+			$filename,
 			$id,
 		);
+
 		$stmt->execute();
 		$stmt->close();
 
@@ -109,6 +168,20 @@ if (isset($_POST["type"])) {
 
 	if ($type === "delete") {
 		$id = $_POST["id_pegawai"];
+
+		// ambil nama foto
+		$result = $db->query(
+			"SELECT foto_profil FROM pegawai WHERE id_pegawai = '$id'",
+		);
+		$row = $result->fetch_assoc();
+
+		if (
+			$row["foto_profil"] &&
+			file_exists("uploads/pegawai/" . $row["foto_profil"])
+		) {
+			unlink("uploads/pegawai/" . $row["foto_profil"]);
+		}
+
 		$stmt = $db->prepare("DELETE FROM pegawai WHERE id_pegawai = ?");
 		$stmt->bind_param("i", $id);
 		$stmt->execute();

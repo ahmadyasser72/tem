@@ -8,7 +8,7 @@ $tables = ["pangkat", "jabatan", "unit_kerja", "pegawai"];
 foreach ($tables as $table) {
 	get(
 		"/dashboard/organisasi/$table",
-		"views/dashboard/organisasi/$table.php",
+		"pages/dashboard/organisasi/$table.php",
 	);
 
 	get("/fragments/form/$table", "form/organisasi/$table.php");
@@ -17,7 +17,7 @@ foreach ($tables as $table) {
 	post("/dashboard/organisasi/$table", "crud/organisasi/$table.php");
 }
 
-any("/404", "views/404.php");
+any("/404", "pages/404.php");
 
 // // ##################################################
 // // ##################################################

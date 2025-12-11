@@ -39,7 +39,10 @@ $title = htmlentities($title);
     })
 
     htmx.onLoad((element)=> {
-      if (element instanceof HTMLDialogElement) element.showModal();
+      if (element instanceof HTMLDialogElement) {
+        element.showModal();
+        element.addEventListener("close", () => element.remove())
+      }
     })
   </script>
 </head>
