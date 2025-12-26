@@ -2,7 +2,7 @@
 
 require_once __DIR__ . "/router.php";
 
-get("/dashboard", "views/dashboard/index.php");
+get("/dashboard", "pages/dashboard/index.php");
 
 $tables = ["pangkat", "jabatan", "unit_kerja", "pegawai"];
 foreach ($tables as $table) {
@@ -11,11 +11,17 @@ foreach ($tables as $table) {
 		"pages/dashboard/organisasi/$table.php",
 	);
 
-	get("/fragments/form/$table", "form/organisasi/$table.php");
-	get("/fragments/form/$table" . '/$id', "form/organisasi/$table.php");
+	get("/fragments/form/$table", "fragments/form/organisasi/$table.php");
+	get(
+		"/fragments/form/$table" . '/$id',
+		"fragments/form/organisasi/$table.php",
+	);
 
 	post("/dashboard/organisasi/$table", "crud/organisasi/$table.php");
 }
+
+get("/fragments/chart/jabatan", "fragments/jabatan_chart.php");
+get("/fragments/chart/unit", "fragments/unit_chart.php");
 
 any("/404", "pages/404.php");
 

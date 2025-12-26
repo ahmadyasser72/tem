@@ -8,6 +8,7 @@ if (($_GET["print"] ?? "") == "1") {
 		"margin_top" => 15,
 		"margin_bottom" => 15,
 		"orientation" => "landscape",
+		"debug" => true,
 	]);
 
 	// ambil data unit kerja + kepala unit + jumlah pegawai
@@ -25,7 +26,7 @@ if (($_GET["print"] ?? "") == "1") {
         LEFT JOIN pegawai p ON u.kepala_unit = p.id_pegawai
         LEFT JOIN pegawai pg ON pg.id_unit = u.id_unit
         GROUP BY u.id_unit
-        ORDER BY u.jenis_unit, u.nama_unit
+        ORDER BY u.id_unit
     ";
 	$result = $db->query($sql);
 
@@ -50,7 +51,7 @@ if (($_GET["print"] ?? "") == "1") {
 	$fill = false;
 	while ($row = $result->fetch_assoc()) {
 		$bg = $fill ? "background-color:#E0EBFF;" : "";
-		$kontak = trim($row["alamat_unit"]);
+		$kontak = trim($row["alamat_unit"] ?? "-");
 		if ($row["telepon_unit"]) {
 			$kontak .= "<br>Telp: " . $row["telepon_unit"];
 		}
@@ -118,14 +119,22 @@ if ($keyword !== "") {
 ?>
 
 <div class="flex max-sm:flex-col gap-y-4 sm:justify-between">
-    <div class="flex gap-2">
+    <div class="join max-sm:join-vertical">
         <button
             hx-get="/fragments/form/unit_kerja"
             hx-target="body"
             hx-swap="beforeend"
-            class="btn btn-primary"
+            class="join-item btn btn-primary"
             >Tambah unit kerja</button>
-        <a target="_blank" href="?print=1" class="btn btn-secondary">Laporan unit kerja</a>
+
+        <a target="_blank" href="?print=1" class="join-item btn btn-secondary">Laporan unit kerja</a>
+
+        <button
+            hx-get="/fragments/chart/unit"
+            hx-target="body"
+            hx-swap="beforeend"
+            class="join-item btn btn-info"
+            >Hirarki unit kerja</button>
     </div>
 
     <label class="input max-sm:w-full">

@@ -12,7 +12,7 @@ if (($_GET["print"] ?? "") == "1") {
 	// ambil data dari database
 	$sql = "SELECT kode_jabatan, nama_jabatan, tipe_jabatan, level_jabatan, uraian_tugas
         FROM jabatan
-        ORDER BY level_jabatan, nama_jabatan";
+        ORDER BY id_jabatan ASC";
 	$result = $db->query($sql);
 
 	// buat HTML untuk tabel
@@ -86,14 +86,22 @@ if ($keyword !== "") {
 ?>
 
 <div class="flex max-sm:flex-col gap-y-4 sm:justify-between">
-    <div class="flex gap-2">
+    <div class="join max-sm:join-vertical">
         <button
             hx-get="/fragments/form/jabatan"
             hx-target="body"
             hx-swap="beforeend"
-            class="btn btn-primary"
+            class="join-item btn btn-primary"
             >Tambah jabatan</button>
-        <a target="_blank" href="?print=1" class="btn btn-secondary">Laporan jabatan</a>
+
+        <a target="_blank" href="?print=1" class="join-item btn btn-secondary">Laporan jabatan</a>
+
+        <button
+            hx-get="/fragments/chart/jabatan"
+            hx-target="body"
+            hx-swap="beforeend"
+            class="join-item btn btn-info"
+            >Hirarki jabatan</button>
     </div>
 
     <label class="input max-sm:w-full">

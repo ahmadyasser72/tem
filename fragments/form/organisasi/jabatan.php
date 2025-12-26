@@ -6,7 +6,7 @@ $row = [
 	"kode_jabatan" => "",
 	"nama_jabatan" => "",
 	"tipe_jabatan" => "",
-	"level_jabatan" => "",
+	"parent_id" => "",
 	"uraian_tugas" => "",
 ];
 
@@ -17,6 +17,16 @@ if (!empty($id)) {
 	$stmt->execute();
 	$row = $stmt->get_result()->fetch_assoc();
 }
+
+$parents = $db
+	->query(
+		"
+        SELECT id_jabatan, nama_jabatan
+        FROM jabatan
+        ORDER BY nama_jabatan
+    ",
+	)
+	->fetch_all(MYSQLI_ASSOC);
 ?>
 
 <dialog class="modal modal-bottom sm:modal-middle">
@@ -77,12 +87,22 @@ if (!empty($id)) {
       </label>
 
       <label class="floating-label">
-        <span>Level Jabatan</span>
-        <input
-          type="number"
-          name="level_jabatan"
-          class="input input-md w-full"
-          value="<?= h($row["level_jabatan"]) ?>">
+        <span>Parent Jabatan</span>
+        <select name="parent_id" class="select w-full">
+          <option value="">-- Tidak Ada (Root) --</option>
+
+          <?php foreach ($parents as $p): ?>
+            <?php if ($editing && $p["id_jabatan"] == $row["id_jabatan"]) {
+            	continue;
+            } ?>
+
+            <option
+              value="<?= $p["id_jabatan"] ?>"
+              <?= sel($row["parent_id"], $p["id_jabatan"]) ?>>
+              <?= h($p["nama_jabatan"]) ?>
+            </option>
+          <?php endforeach; ?>
+        </select>
       </label>
 
       <label class="floating-label">

@@ -81,14 +81,15 @@ if ($keyword !== "") {
 ?>
 
 <div class="flex max-sm:flex-col gap-y-4 sm:justify-between">
-    <div class="flex gap-2">
+    <div class="join max-sm:join-vertical">
         <button
             hx-get="/fragments/form/pangkat"
             hx-target="body"
             hx-swap="beforeend"
-            class="btn btn-primary"
+            class="join-item btn btn-primary"
             >Tambah pangkat</button>
-        <a target="_blank" href="?print=1" class="btn btn-secondary">Laporan pangkat</a>
+
+        <a target="_blank" href="?print=1" class="join-item btn btn-secondary">Laporan pangkat</a>
     </div>
 
     <label class="input max-sm:w-full">

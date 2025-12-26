@@ -13,6 +13,7 @@ if (($_GET["print"] ?? "") == "1") {
 	// ambil data pegawai + unit + jabatan + pangkat
 	$sql = "
         SELECT
+            pg.foto_profil,
             pg.nip,
             pg.nama_lengkap,
             pg.jenis_kelamin,
@@ -28,7 +29,7 @@ if (($_GET["print"] ?? "") == "1") {
         LEFT JOIN unit_kerja u ON pg.id_unit = u.id_unit
         LEFT JOIN jabatan j ON pg.id_jabatan = j.id_jabatan
         LEFT JOIN pangkat p ON pg.id_pangkat = p.id_pangkat
-        ORDER BY u.nama_unit, j.level_jabatan, pg.nama_lengkap
+        ORDER BY pg.id_pegawai DESC
     ";
 	$result = $db->query($sql);
 
@@ -38,15 +39,16 @@ if (($_GET["print"] ?? "") == "1") {
         <table border="1" cellspacing="0" cellpadding="5" width="100%">
             <thead style="background-color:#0066CC; color:white;">
                 <tr>
-                    <th style="width:10%;">NIP</th>
-                    <th style="width:15%;">Nama</th>
-                    <th style="width:5%;">JK</th>
-                    <th style="width:12%;">Status Kawin</th>
-                    <th style="width:12%;">Unit Kerja</th>
-                    <th style="width:12%;">Jabatan</th>
-                    <th style="width:10%;">Pangkat</th>
-                    <th style="width:10%;">Status Pegawai</th>
-                    <th style="width:14%;">Kontak</th>
+                    <th>Foto</th>
+                    <th>NIP</th>
+                    <th>Nama</th>
+                    <th>JK</th>
+                    <th>Status Kawin</th>
+                    <th>Unit Kerja</th>
+                    <th>Jabatan</th>
+                    <th>Pangkat</th>
+                    <th>Status Pegawai</th>
+                    <th>Kontak</th>
                 </tr>
             </thead>
             <tbody>
@@ -61,6 +63,13 @@ if (($_GET["print"] ?? "") == "1") {
 		}
 
 		$html .= '<tr style="' . $bg . '">';
+		$html .=
+			'<td> <img src="uploads/pegawai/' .
+			($row["foto_profil"] &&
+			file_exists("uploads/pegawai/" . $row["foto_profil"])
+				? $row["foto_profil"]
+				: "placeholder.png") .
+			'" style="width:64px"> </td>';
 		$html .= '<td style="text-align:center;">' . $row["nip"] . "</td>";
 		$html .= "<td>" . $row["nama_lengkap"] . "</td>";
 		$html .=
@@ -89,6 +98,7 @@ if (($_GET["print"] ?? "") == "1") {
 	// tulis HTML ke mPDF
 	$mpdf->WriteHTML($html);
 
+	$mpdf->debug = true;
 	// output PDF ke browser
 	$mpdf->Output("laporan_pegawai.pdf", "I");
 	exit();
@@ -107,7 +117,7 @@ if ($keyword !== "") {
         LEFT JOIN jabatan j ON p.id_jabatan = j.id_jabatan
         LEFT JOIN unit_kerja u ON p.id_unit = u.id_unit
         WHERE p.nip LIKE ? OR p.nama_lengkap LIKE ? OR u.nama_unit LIKE ?
-        ORDER BY p.id_pegawai ASC
+        ORDER BY p.id_pegawai DESC
     ");
 	$like = "%$keyword%";
 	$stmt->bind_param("sss", $like, $like, $like);
@@ -120,20 +130,21 @@ if ($keyword !== "") {
         LEFT JOIN pangkat pg ON p.id_pangkat = pg.id_pangkat
         LEFT JOIN jabatan j ON p.id_jabatan = j.id_jabatan
         LEFT JOIN unit_kerja u ON p.id_unit = u.id_unit
-        ORDER BY p.id_pegawai ASC
+        ORDER BY p.id_pegawai DESC
     ");
 }
 ?>
 
 <div class="flex max-sm:flex-col gap-y-4 sm:justify-between">
-    <div class="flex gap-2">
+    <div class="join max-sm:join-vertical">
         <button
             hx-get="/fragments/form/pegawai"
             hx-target="body"
             hx-swap="beforeend"
-            class="btn btn-primary"
+            class="join-item btn btn-primary"
             >Tambah pegawai</button>
-        <a target="_blank" href="?print=1" class="btn btn-secondary">Laporan pegawai</a>
+
+        <a target="_blank" href="?print=1" class="join-item btn btn-secondary">Laporan pegawai</a>
     </div>
 
     <label class="input max-sm:w-full">
@@ -163,44 +174,47 @@ if ($keyword !== "") {
             </tr>
         </thead>
         <tbody>
+            <?php $idx = 1; ?>
             <?php if ($rows->num_rows > 0): ?>
                 <?php while ($row = $rows->fetch_assoc()): ?>
                     <tr>
                         <td>
-                            <?php if (
-                            	$row["foto_profil"] &&
-                            	file_exists(
-                            		"uploads/pegawai/" . $row["foto_profil"],
-                            	)
-                            ): ?>
-                                <img src="uploads/pegawai/<?= $row[
+                            <div class="size-24">
+                                <img src="/uploads/pegawai/<?= $row[
                                 	"foto_profil"
-                                ] ?>"
-                                    alt="foto"
-                                    class="size-12 border-box object-cover">
-                            <?php endif; ?>
+                                ] &&
+                                file_exists(
+                                	"uploads/pegawai/" . $row["foto_profil"],
+                                )
+                                	? $row["foto_profil"]
+                                	: "placeholder.png" ?>"
+                                alt="foto"
+                                class="size-full aspect-square border-box object-cover shadow-sm">
+                            </div>
                         </td>
 
-                        <th><?= $row["id_pegawai"] ?></th>
+                        <th><?= $idx++ ?></th>
                         <td><?= htmlspecialchars($row["nip"]) ?></td>
                         <td><?= htmlspecialchars($row["nama_lengkap"]) ?></td>
                         <td><?= htmlspecialchars($row["nama_pangkat"]) ?></td>
                         <td><?= htmlspecialchars($row["nama_jabatan"]) ?></td>
                         <td><?= htmlspecialchars($row["nama_unit"]) ?></td>
                         <td><?= htmlspecialchars($row["status_pegawai"]) ?></td>
-                        <td class="flex gap-2">
-                            <button
-                                hx-get="/fragments/form/pegawai/<?= $row[
-                                	"id_pegawai"
-                                ] ?>"
-                                hx-target="body"
-                                hx-swap="beforeend"
-                                class="btn btn-sm btn-warning"
-                                >Edit</button>
+                        <td>
+                            <div class="flex gap-2">
+                                <button
+                                    hx-get="/fragments/form/pegawai/<?= $row[
+                                    	"id_pegawai"
+                                    ] ?>"
+                                    hx-target="body"
+                                    hx-swap="beforeend"
+                                    class="btn btn-sm btn-warning"
+                                    >Edit</button>
 
-                            <button class="btn btn-sm btn-error" onclick="openDeleteModal(<?= $row[
-                            	"id_pegawai"
-                            ] ?>)">Hapus</button>
+                                <button class="btn btn-sm btn-error" onclick="openDeleteModal(<?= $row[
+                                	"id_pegawai"
+                                ] ?>)">Hapus</button>
+                            </div>
                         </td>
                     </tr>
                 <?php endwhile; ?>

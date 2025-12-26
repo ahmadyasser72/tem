@@ -101,7 +101,7 @@ $unitTypeData = $db
 
     <!-- Pegawai Aktif vs Nonaktif (Pie Chart) -->
     <div class="bg-white p-4 rounded shadow">
-        <h2 class="text-xl font-semibold mb-2">Pegawai Aktif/Nonaktif</h2>
+        <h2 class="text-xl font-semibold mb-2">Pegawai Aktif/Tidak</h2>
         <div>
             <canvas id="activeChart"></canvas>
         </div>
@@ -151,6 +151,7 @@ $unitTypeData = $db
 
 
 <script>
+(function () {
     const unitLabels = <?= json_encode(array_column($unitData, "nama_unit")) ?>;
     const unitValues = <?= json_encode(array_column($unitData, "total")) ?>;
 
@@ -196,8 +197,11 @@ $unitTypeData = $db
     const chartOptions = {
         responsive: true,
         plugins: {
-            legend: {
-                position: 'top'
+            legend: { display: false }
+        },
+        scales: {
+            x: {
+                ticks: { display: false }
             }
         }
     };
@@ -288,4 +292,5 @@ $unitTypeData = $db
         },
         options: chartOptions
     });
+})()
 </script>

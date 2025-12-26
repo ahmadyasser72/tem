@@ -10,6 +10,7 @@ CREATE TABLE IF NOT EXISTS pangkat (
 
 CREATE TABLE IF NOT EXISTS jabatan (
     id_jabatan INT PRIMARY KEY AUTO_INCREMENT,
+    parent_id INT DEFAULT NULL,
     kode_jabatan VARCHAR(10) NOT NULL UNIQUE,
     nama_jabatan VARCHAR(50) NOT NULL,
     tipe_jabatan ENUM('Struktural', 'Fungsional', 'Pelaksana') NOT NULL,
@@ -61,6 +62,10 @@ CREATE TABLE IF NOT EXISTS pegawai (
     FOREIGN KEY (id_jabatan) REFERENCES jabatan(id_jabatan),
     FOREIGN KEY (id_unit) REFERENCES unit_kerja(id_unit)
 );
+
+ALTER TABLE jabatan
+ADD CONSTRAINT fk_jabatan_parent
+FOREIGN KEY (parent_id) REFERENCES jabatan (id_jabatan) ON DELETE SET NULL;
 
 ALTER TABLE unit_kerja
 ADD CONSTRAINT fk_kepala_unit
