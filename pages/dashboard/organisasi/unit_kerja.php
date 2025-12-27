@@ -1,5 +1,6 @@
 <?php
 
+
 if (($_GET["print"] ?? "") == "1") {
 	$mpdf = new \Mpdf\Mpdf([
 		"format" => "A4",
@@ -11,8 +12,33 @@ if (($_GET["print"] ?? "") == "1") {
 		"debug" => true,
 	]);
 
-	// ambil data unit kerja + kepala unit + jumlah pegawai
-	$sql = "
+	// ambil data unit kerja + kepala unit + jumlah pegawai, dengan filter jika ada keyword
+	$keyword = trim($_GET["search"] ?? "");
+	if ($keyword !== "") {
+		$like = "%$keyword%";
+
+		$stmt = $db->prepare(" 
+        SELECT
+            u.kode_unit,
+            u.nama_unit,
+            u.jenis_unit,
+            IFNULL(i.nama_unit, '-') AS induk_unit,
+            IFNULL(p.nama_lengkap, '-') AS kepala_unit,
+            COUNT(pg.id_pegawai) AS jumlah_pegawai,
+            u.alamat_unit, u.telepon_unit, u.email_unit
+        FROM unit_kerja u
+        LEFT JOIN unit_kerja i ON u.induk_unit = i.id_unit
+        LEFT JOIN pegawai p ON u.kepala_unit = p.id_pegawai
+        LEFT JOIN pegawai pg ON pg.id_unit = u.id_unit
+        WHERE u.kode_unit LIKE ? OR u.nama_unit LIKE ? OR u.jenis_unit LIKE ?
+        GROUP BY u.id_unit
+        ORDER BY u.id_unit
+    ");
+		$stmt->bind_param("sss", $like, $like, $like);
+		$stmt->execute();
+		$result = $stmt->get_result();
+	} else {
+		$sql = "
         SELECT
             u.kode_unit,
             u.nama_unit,
@@ -28,7 +54,8 @@ if (($_GET["print"] ?? "") == "1") {
         GROUP BY u.id_unit
         ORDER BY u.id_unit
     ";
-	$result = $db->query($sql);
+		$result = $db->query($sql);
+	}
 
 	// buat HTML tabel
 	$html = '
@@ -93,8 +120,26 @@ $title = "Organisasi - Unit Kerja";
 
 $search = false;
 $keyword = trim($_GET["search"] ?? "");
+$page = max(1, (int) ($_GET["page"] ?? 1));
+$perPage = 10;
+$offset = ($page - 1) * $perPage;
+$totalRows = 0;
+
 if ($keyword !== "") {
 	$search = true;
+	$like = "%$keyword%";
+
+	$countStmt = $db->prepare("
+        SELECT COUNT(*) AS total
+        FROM unit_kerja u
+        WHERE u.kode_unit LIKE ? OR u.nama_unit LIKE ? OR u.jenis_unit LIKE ?
+    ");
+	$countStmt->bind_param("sss", $like, $like, $like);
+	$countStmt->execute();
+	$countResult = $countStmt->get_result();
+	$totalRows = (int) ($countResult->fetch_assoc()["total"] ?? 0);
+	$countStmt->close();
+
 	$stmt = $db->prepare("
         SELECT u.*, k.nama_lengkap AS kepala_nama, i.nama_unit AS induk_nama
         FROM unit_kerja u
@@ -102,19 +147,30 @@ if ($keyword !== "") {
         LEFT JOIN unit_kerja i ON u.induk_unit = i.id_unit
         WHERE u.kode_unit LIKE ? OR u.nama_unit LIKE ? OR u.jenis_unit LIKE ?
         ORDER BY u.id_unit ASC
+        LIMIT ? OFFSET ?
     ");
-	$like = "%$keyword%";
-	$stmt->bind_param("sss", $like, $like, $like);
+	$stmt->bind_param("sssii", $like, $like, $like, $perPage, $offset);
 	$stmt->execute();
 	$rows = $stmt->get_result();
 } else {
+	$countResult = $db->query("SELECT COUNT(*) AS total FROM unit_kerja");
+	if ($countResult) {
+		$totalRows = (int) ($countResult->fetch_assoc()["total"] ?? 0);
+	}
+
 	$rows = $db->query("
         SELECT u.*, k.nama_lengkap AS kepala_nama, i.nama_unit AS induk_nama
         FROM unit_kerja u
         LEFT JOIN pegawai k ON u.kepala_unit = k.id_pegawai
         LEFT JOIN unit_kerja i ON u.induk_unit = i.id_unit
         ORDER BY u.id_unit ASC
+        LIMIT $perPage OFFSET $offset
     ");
+}
+
+$totalPages = max(1, (int) ceil($totalRows / $perPage));
+if ($page > $totalPages) {
+	$page = $totalPages;
 }
 ?>
 
@@ -127,7 +183,14 @@ if ($keyword !== "") {
             class="join-item btn btn-primary"
             >Tambah unit kerja</button>
 
-        <a target="_blank" href="?print=1" class="join-item btn btn-secondary">Laporan unit kerja</a>
+        <a
+			id="unit-kerja-print-button"
+			target="_blank"
+			href="?print=1<?= $keyword !== '' ? '&search=' . urlencode($keyword) : '' ?>"
+			class="join-item btn btn-secondary"
+		>
+			Laporan unit kerja
+		</a>
 
         <button
             hx-get="/fragments/chart/unit"
@@ -137,20 +200,10 @@ if ($keyword !== "") {
             >Hirarki unit kerja</button>
     </div>
 
-    <label class="input max-sm:w-full">
-        <iconify-icon icon="lucide:search" width="none" class="size-4"></iconify-icon>
-        <input
-            type="search"
-            name="search"
-            hx-get hx-trigger="input changed delay:500ms"
-            hx-target="tbody"
-            hx-swap="outerHTML"
-            hx-select="tbody"
-            value="<?= htmlspecialchars($keyword) ?>" />
-    </label>
+	<?php render_search_input('unit-kerja-table-wrapper', $keyword, 'unit-kerja-print-button'); ?>
 </div>
 
-<div class="overflow-x-auto rounded-box border border-base-content/5 bg-base-100 mt-4">
+<div id="unit-kerja-table-wrapper" class="overflow-x-auto rounded-box border border-base-content/5 bg-base-100 mt-4">
     <table class="table table-zebra w-full">
         <thead>
             <tr>
@@ -164,9 +217,9 @@ if ($keyword !== "") {
             </tr>
         </thead>
         <tbody>
-            <?php if ($rows->num_rows > 0): ?>
-                <?php while ($row = $rows->fetch_assoc()): ?>
-                    <tr>
+			<?php if ($rows && $rows->num_rows > 0): ?>
+				<?php while ($row = $rows->fetch_assoc()): ?>
+					<tr <?= view_transition_attrs('unit-row', $row["id_unit"]) ?>>
                         <th><?= $row["id_unit"] ?></th>
                         <td><?= htmlspecialchars($row["kode_unit"]) ?></td>
                         <td><?= htmlspecialchars($row["nama_unit"]) ?></td>
@@ -196,12 +249,20 @@ if ($keyword !== "") {
             <?php else: ?>
                 <tr>
                     <td colspan="7" class="text-center"><?= $search
-                    	? "Unit kerja tidak ditemukan."
-                    	: "Belum ada data unit kerja." ?></td>
+	                    ? "Unit kerja tidak ditemukan."
+	                    : "Belum ada data unit kerja." ?></td>
                 </tr>
             <?php endif; ?>
         </tbody>
     </table>
+
+    <?php
+	$extraParams = [];
+	if ($keyword !== "") {
+		$extraParams["search"] = $keyword;
+	}
+	render_pagination_join("unit-kerja-table-wrapper", $page, $totalPages, "", $extraParams);
+    ?>
 </div>
 
 

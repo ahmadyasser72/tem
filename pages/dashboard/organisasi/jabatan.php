@@ -9,11 +9,25 @@ if (($_GET["print"] ?? "") == "1") {
 		"margin_bottom" => 15,
 	]);
 
-	// ambil data dari database
-	$sql = "SELECT kode_jabatan, nama_jabatan, tipe_jabatan, level_jabatan, uraian_tugas
+	// ambil data dari database, dengan filter jika ada keyword
+	$keyword = trim($_GET["search"] ?? "");
+	if ($keyword !== "") {
+		$like = "%$keyword%";
+		$stmt = $db->prepare("SELECT kode_jabatan, nama_jabatan, tipe_jabatan, level_jabatan, uraian_tugas
+        FROM jabatan
+        WHERE kode_jabatan LIKE ?
+           OR nama_jabatan LIKE ?
+           OR tipe_jabatan LIKE ?
+        ORDER BY id_jabatan ASC");
+		$stmt->bind_param("sss", $like, $like, $like);
+		$stmt->execute();
+		$result = $stmt->get_result();
+	} else {
+		$sql = "SELECT kode_jabatan, nama_jabatan, tipe_jabatan, level_jabatan, uraian_tugas
         FROM jabatan
         ORDER BY id_jabatan ASC";
-	$result = $db->query($sql);
+		$result = $db->query($sql);
+	}
 
 	// buat HTML untuk tabel
 	$html = '
@@ -64,9 +78,27 @@ $title = "Organisasi - Jabatan";
 
 $search = false;
 $keyword = trim($_GET["search"] ?? "");
+$page = max(1, (int) ($_GET["page"] ?? 1));
+$perPage = 10;
+$offset = ($page - 1) * $perPage;
+$totalRows = 0;
 
 if ($keyword !== "") {
 	$search = true;
+	$like = "%$keyword%";
+
+	$countStmt = $db->prepare("
+        SELECT COUNT(*) AS total
+        FROM jabatan
+        WHERE kode_jabatan LIKE ?
+           OR nama_jabatan LIKE ?
+           OR tipe_jabatan LIKE ?
+    ");
+	$countStmt->bind_param("sss", $like, $like, $like);
+	$countStmt->execute();
+	$countResult = $countStmt->get_result();
+	$totalRows = (int) ($countResult->fetch_assoc()["total"] ?? 0);
+	$countStmt->close();
 
 	$stmt = $db->prepare("
         SELECT * FROM jabatan
@@ -74,14 +106,23 @@ if ($keyword !== "") {
            OR nama_jabatan LIKE ?
            OR tipe_jabatan LIKE ?
         ORDER BY id_jabatan ASC
+        LIMIT ? OFFSET ?
     ");
-
-	$like = "%$keyword%";
-	$stmt->bind_param("sss", $like, $like, $like);
+	$stmt->bind_param("sssii", $like, $like, $like, $perPage, $offset);
 	$stmt->execute();
 	$rows = $stmt->get_result();
 } else {
-	$rows = $db->query("SELECT * FROM jabatan ORDER BY id_jabatan ASC");
+	$countResult = $db->query("SELECT COUNT(*) AS total FROM jabatan");
+	if ($countResult) {
+		$totalRows = (int) ($countResult->fetch_assoc()["total"] ?? 0);
+	}
+
+	$rows = $db->query("SELECT * FROM jabatan ORDER BY id_jabatan ASC LIMIT $perPage OFFSET $offset");
+}
+
+$totalPages = max(1, (int) ceil($totalRows / $perPage));
+if ($page > $totalPages) {
+	$page = $totalPages;
 }
 ?>
 
@@ -94,7 +135,14 @@ if ($keyword !== "") {
             class="join-item btn btn-primary"
             >Tambah jabatan</button>
 
-        <a target="_blank" href="?print=1" class="join-item btn btn-secondary">Laporan jabatan</a>
+        <a
+			id="jabatan-print-button"
+			target="_blank"
+			href="?print=1<?= $keyword !== '' ? '&search=' . urlencode($keyword) : '' ?>"
+			class="join-item btn btn-secondary"
+		>
+			Laporan jabatan
+		</a>
 
         <button
             hx-get="/fragments/chart/jabatan"
@@ -104,21 +152,10 @@ if ($keyword !== "") {
             >Hirarki jabatan</button>
     </div>
 
-    <label class="input max-sm:w-full">
-        <iconify-icon icon="lucide:search" width="none" class="size-4"></iconify-icon>
-        <input
-            type="search"
-            name="search"
-            hx-get
-            hx-trigger="input changed delay:500ms"
-            hx-target="tbody"
-            hx-swap="outerHTML"
-            hx-select="tbody"
-            value="<?= htmlspecialchars($keyword) ?>" />
-    </label>
+	<?php render_search_input('jabatan-table-wrapper', $keyword, 'jabatan-print-button'); ?>
 </div>
 
-<div class="overflow-x-auto rounded-box border border-base-content/5 bg-base-100 mt-4">
+<div id="jabatan-table-wrapper" class="overflow-x-auto rounded-box border border-base-content/5 bg-base-100 mt-4">
     <table class="table table-zebra w-full">
         <thead>
             <tr>
@@ -132,9 +169,9 @@ if ($keyword !== "") {
         </thead>
 
         <tbody>
-            <?php if ($rows->num_rows > 0): ?>
-                <?php while ($row = $rows->fetch_assoc()): ?>
-                    <tr>
+			<?php if ($rows && $rows->num_rows > 0): ?>
+				<?php while ($row = $rows->fetch_assoc()): ?>
+					<tr <?= view_transition_attrs('jabatan-row', $row["id_jabatan"]) ?>>
                         <th><?= $row["id_jabatan"] ?></th>
                         <td><?= htmlspecialchars($row["kode_jabatan"]) ?></td>
                         <td><?= htmlspecialchars($row["nama_jabatan"]) ?></td>
@@ -163,13 +200,21 @@ if ($keyword !== "") {
                 <tr>
                     <td colspan="6" class="text-center">
                         <?= $search
-                        	? "Jabatan tidak ditemukan."
-                        	: "Belum ada data jabatan." ?>
+	                        ? "Jabatan tidak ditemukan."
+	                        : "Belum ada data jabatan." ?>
                     </td>
                 </tr>
             <?php endif; ?>
         </tbody>
     </table>
+
+    <?php
+	$extraParams = [];
+	if ($keyword !== "") {
+		$extraParams["search"] = $keyword;
+	}
+	render_pagination_join("jabatan-table-wrapper", $page, $totalPages, "", $extraParams);
+    ?>
 </div>
 
 

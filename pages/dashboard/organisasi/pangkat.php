@@ -9,11 +9,25 @@ if (($_GET["print"] ?? "") == "1") {
 		"margin_bottom" => 15,
 	]);
 
-	// ambil data dari database
-	$sql = "SELECT kode_pangkat, nama_pangkat, golongan, keterangan
+	// ambil data dari database, dengan filter jika ada keyword
+	$keyword = trim($_GET["search"] ?? "");
+	if ($keyword !== "") {
+		$like = "%$keyword%";
+		$stmt = $db->prepare("SELECT kode_pangkat, nama_pangkat, golongan, keterangan
+            FROM pangkat
+            WHERE kode_pangkat LIKE ?
+               OR nama_pangkat LIKE ?
+               OR golongan LIKE ?
+            ORDER BY golongan, nama_pangkat");
+		$stmt->bind_param("sss", $like, $like, $like);
+		$stmt->execute();
+		$result = $stmt->get_result();
+	} else {
+		$sql = "SELECT kode_pangkat, nama_pangkat, golongan, keterangan
             FROM pangkat
             ORDER BY golongan, nama_pangkat";
-	$result = $db->query($sql);
+		$result = $db->query($sql);
+	}
 
 	// buat HTML untuk tabel
 	$html = '
@@ -60,8 +74,27 @@ $title = "Organisasi - Pangkat";
 
 $search = false;
 $keyword = trim($_GET["search"] ?? "");
+$page = max(1, (int) ($_GET["page"] ?? 1));
+$perPage = 10;
+$offset = ($page - 1) * $perPage;
+$totalRows = 0;
+
 if ($keyword !== "") {
 	$search = true;
+	$like = "%$keyword%";
+
+	$countStmt = $db->prepare("
+        SELECT COUNT(*) AS total
+        FROM pangkat
+        WHERE kode_pangkat LIKE ?
+           OR nama_pangkat LIKE ?
+           OR golongan LIKE ?
+    ");
+	$countStmt->bind_param("sss", $like, $like, $like);
+	$countStmt->execute();
+	$countResult = $countStmt->get_result();
+	$totalRows = (int) ($countResult->fetch_assoc()["total"] ?? 0);
+	$countStmt->close();
 
 	$stmt = $db->prepare("
         SELECT * FROM pangkat
@@ -69,14 +102,24 @@ if ($keyword !== "") {
            OR nama_pangkat LIKE ?
            OR golongan LIKE ?
         ORDER BY id_pangkat ASC
+        LIMIT ? OFFSET ?
     ");
-	$like = "%$keyword%";
-	$stmt->bind_param("sss", $like, $like, $like);
+	$stmt->bind_param("sssii", $like, $like, $like, $perPage, $offset);
 	$stmt->execute();
 	$rows = $stmt->get_result();
 } else {
-	$query = "SELECT * FROM pangkat ORDER BY id_pangkat ASC";
+	$countResult = $db->query("SELECT COUNT(*) AS total FROM pangkat");
+	if ($countResult) {
+		$totalRows = (int) ($countResult->fetch_assoc()["total"] ?? 0);
+	}
+
+	$query = "SELECT * FROM pangkat ORDER BY id_pangkat ASC LIMIT $perPage OFFSET $offset";
 	$rows = $db->query($query);
+}
+
+$totalPages = max(1, (int) ceil($totalRows / $perPage));
+if ($page > $totalPages) {
+	$page = $totalPages;
 }
 ?>
 
@@ -89,24 +132,20 @@ if ($keyword !== "") {
             class="join-item btn btn-primary"
             >Tambah pangkat</button>
 
-        <a target="_blank" href="?print=1" class="join-item btn btn-secondary">Laporan pangkat</a>
+        <a
+			id="pangkat-print-button"
+			target="_blank"
+			href="?print=1<?= $keyword !== '' ? '&search=' . urlencode($keyword) : '' ?>"
+			class="join-item btn btn-secondary"
+		>
+			Laporan pangkat
+		</a>
     </div>
 
-    <label class="input max-sm:w-full">
-        <iconify-icon icon="lucide:search" width="none" class="size-4"></iconify-icon>
-        <input
-            type="search"
-            name="search"
-            hx-get
-            hx-trigger="input changed delay:500ms"
-            hx-target="tbody"
-            hx-swap="outerHTML"
-            hx-select="tbody"
-            value="<?= htmlspecialchars($keyword) ?>" />
-    </label>
+	<?php render_search_input('pangkat-table-wrapper', $keyword, 'pangkat-print-button'); ?>
 </div>
 
-<div class="overflow-x-auto rounded-box border border-base-content/5 bg-base-100 mt-4">
+<div id="pangkat-table-wrapper" class="overflow-x-auto rounded-box border border-base-content/5 bg-base-100 mt-4">
     <table class="table table-zebra w-full">
         <thead>
             <tr>
@@ -119,9 +158,9 @@ if ($keyword !== "") {
         </thead>
 
         <tbody>
-            <?php if ($rows->num_rows > 0): ?>
-                <?php while ($row = $rows->fetch_assoc()): ?>
-                    <tr>
+			<?php if ($rows && $rows->num_rows > 0): ?>
+				<?php while ($row = $rows->fetch_assoc()): ?>
+					<tr <?= view_transition_attrs('pangkat-row', $row["id_pangkat"]) ?>>
                         <th><?= $row["id_pangkat"] ?></th>
                         <td><?= htmlspecialchars($row["kode_pangkat"]) ?></td>
                         <td><?= htmlspecialchars($row["nama_pangkat"]) ?></td>
@@ -148,14 +187,22 @@ if ($keyword !== "") {
                 <tr>
                     <td colspan="5" class="text-center">
                         <?= $search
-                        	? "Pangkat tidak ditemukan."
-                        	: "Belum ada data pangkat." ?>
+	                        ? "Pangkat tidak ditemukan."
+	                        : "Belum ada data pangkat." ?>
                     </td>
                 </tr>
             <?php endif; ?>
         </tbody>
 
     </table>
+
+    <?php
+	$extraParams = [];
+	if ($keyword !== "") {
+		$extraParams["search"] = $keyword;
+	}
+	render_pagination_join("pangkat-table-wrapper", $page, $totalPages, "", $extraParams);
+    ?>
 </div>
 
 

@@ -39,8 +39,8 @@ $items = [
 			hx-boost="true"
 			hx-target="main"
 			hx-select="main"
-			hx-swap="outerHTML"
-			hx-select-oob="#sidebar-menu, #navbar-title">
+			hx-swap="outerHTML transition:true show:window:top"
+			hx-swap-oob="true">
 
 			<?php foreach ($items as $item): ?>
 				<li>

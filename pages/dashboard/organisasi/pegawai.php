@@ -10,8 +10,36 @@ if (($_GET["print"] ?? "") == "1") {
 		"orientation" => "landscape",
 	]);
 
-	// ambil data pegawai + unit + jabatan + pangkat
-	$sql = "
+	// ambil data pegawai + unit + jabatan + pangkat, dengan filter jika ada keyword
+	$keyword = trim($_GET["search"] ?? "");
+	if ($keyword !== "") {
+		$like = "%$keyword%";
+		$stmt = $db->prepare("
+        SELECT
+            pg.foto_profil,
+            pg.nip,
+            pg.nama_lengkap,
+            pg.jenis_kelamin,
+            pg.status_perkawinan,
+            pg.tanggal_masuk,
+            pg.status_pegawai,
+            u.nama_unit AS unit_kerja,
+            j.nama_jabatan AS jabatan,
+            p.nama_pangkat AS pangkat,
+            pg.telepon,
+            pg.email
+        FROM pegawai pg
+        LEFT JOIN unit_kerja u ON pg.id_unit = u.id_unit
+        LEFT JOIN jabatan j ON pg.id_jabatan = j.id_jabatan
+        LEFT JOIN pangkat p ON pg.id_pangkat = p.id_pangkat
+        WHERE pg.nip LIKE ? OR pg.nama_lengkap LIKE ? OR u.nama_unit LIKE ?
+        ORDER BY pg.id_pegawai DESC
+    ");
+		$stmt->bind_param("sss", $like, $like, $like);
+		$stmt->execute();
+		$result = $stmt->get_result();
+	} else {
+		$sql = "
         SELECT
             pg.foto_profil,
             pg.nip,
@@ -31,7 +59,8 @@ if (($_GET["print"] ?? "") == "1") {
         LEFT JOIN pangkat p ON pg.id_pangkat = p.id_pangkat
         ORDER BY pg.id_pegawai DESC
     ";
-	$result = $db->query($sql);
+		$result = $db->query($sql);
+	}
 
 	// buat HTML tabel
 	$html = '
@@ -108,8 +137,27 @@ $title = "Organisasi - Pegawai";
 
 $search = false;
 $keyword = trim($_GET["search"] ?? "");
+$page = max(1, (int) ($_GET["page"] ?? 1));
+$perPage = 10;
+$offset = ($page - 1) * $perPage;
+$totalRows = 0;
+
 if ($keyword !== "") {
 	$search = true;
+	$like = "%$keyword%";
+
+	$countStmt = $db->prepare("
+        SELECT COUNT(*) AS total
+        FROM pegawai p
+        LEFT JOIN unit_kerja u ON p.id_unit = u.id_unit
+        WHERE p.nip LIKE ? OR p.nama_lengkap LIKE ? OR u.nama_unit LIKE ?
+    ");
+	$countStmt->bind_param("sss", $like, $like, $like);
+	$countStmt->execute();
+	$countResult = $countStmt->get_result();
+	$totalRows = (int) ($countResult->fetch_assoc()["total"] ?? 0);
+	$countStmt->close();
+
 	$stmt = $db->prepare("
         SELECT p.*, pg.nama_pangkat, j.nama_jabatan, u.nama_unit
         FROM pegawai p
@@ -118,12 +166,17 @@ if ($keyword !== "") {
         LEFT JOIN unit_kerja u ON p.id_unit = u.id_unit
         WHERE p.nip LIKE ? OR p.nama_lengkap LIKE ? OR u.nama_unit LIKE ?
         ORDER BY p.id_pegawai DESC
+        LIMIT ? OFFSET ?
     ");
-	$like = "%$keyword%";
-	$stmt->bind_param("sss", $like, $like, $like);
+	$stmt->bind_param("sssii", $like, $like, $like, $perPage, $offset);
 	$stmt->execute();
 	$rows = $stmt->get_result();
 } else {
+	$countResult = $db->query("SELECT COUNT(*) AS total FROM pegawai");
+	if ($countResult) {
+		$totalRows = (int) ($countResult->fetch_assoc()["total"] ?? 0);
+	}
+
 	$rows = $db->query("
         SELECT p.*, pg.nama_pangkat, j.nama_jabatan, u.nama_unit
         FROM pegawai p
@@ -131,7 +184,13 @@ if ($keyword !== "") {
         LEFT JOIN jabatan j ON p.id_jabatan = j.id_jabatan
         LEFT JOIN unit_kerja u ON p.id_unit = u.id_unit
         ORDER BY p.id_pegawai DESC
+        LIMIT $perPage OFFSET $offset
     ");
+}
+
+$totalPages = max(1, (int) ceil($totalRows / $perPage));
+if ($page > $totalPages) {
+	$page = $totalPages;
 }
 ?>
 
@@ -144,21 +203,20 @@ if ($keyword !== "") {
             class="join-item btn btn-primary"
             >Tambah pegawai</button>
 
-        <a target="_blank" href="?print=1" class="join-item btn btn-secondary">Laporan pegawai</a>
+        <a
+			id="pegawai-print-button"
+			target="_blank"
+			href="?print=1<?= $keyword !== '' ? '&search=' . urlencode($keyword) : '' ?>"
+			class="join-item btn btn-secondary"
+		>
+			Laporan pegawai
+		</a>
     </div>
 
-    <label class="input max-sm:w-full">
-        <iconify-icon icon="lucide:search" width="none" class="size-4"></iconify-icon>
-        <input type="search" name="search"
-            hx-get hx-trigger="input changed delay:500ms"
-            hx-target="tbody"
-            hx-swap="outerHTML"
-            hx-select="tbody"
-            value="<?= htmlspecialchars($keyword) ?>" />
-    </label>
+	<?php render_search_input('pegawai-table-wrapper', $keyword, 'pegawai-print-button'); ?>
 </div>
 
-<div class="overflow-x-auto rounded-box border border-base-content/5 bg-base-100 mt-4">
+<div id="pegawai-table-wrapper" class="overflow-x-auto rounded-box border border-base-content/5 bg-base-100 mt-4">
     <table class="table table-zebra w-full">
         <thead>
             <tr>
@@ -174,10 +232,10 @@ if ($keyword !== "") {
             </tr>
         </thead>
         <tbody>
-            <?php $idx = 1; ?>
-            <?php if ($rows->num_rows > 0): ?>
-                <?php while ($row = $rows->fetch_assoc()): ?>
-                    <tr>
+            <?php $idx = 1 + $offset; ?>
+			<?php if ($rows && $rows->num_rows > 0): ?>
+				<?php while ($row = $rows->fetch_assoc()): ?>
+					<tr <?= view_transition_attrs('pegawai-row', $row["id_pegawai"]) ?>>
                         <td>
                             <div class="size-24">
                                 <img src="/uploads/pegawai/<?= $row[
@@ -220,13 +278,21 @@ if ($keyword !== "") {
                 <?php endwhile; ?>
             <?php else: ?>
                 <tr>
-                    <td colspan="8" class="text-center"><?= $search
-                    	? "Pegawai tidak ditemukan."
-                    	: "Belum ada data pegawai." ?></td>
+                    <td colspan="9" class="text-center"><?= $search
+	                    ? "Pegawai tidak ditemukan."
+	                    : "Belum ada data pegawai." ?></td>
                 </tr>
             <?php endif; ?>
         </tbody>
     </table>
+
+    <?php
+	$extraParams = [];
+	if ($keyword !== "") {
+		$extraParams["search"] = $keyword;
+	}
+	render_pagination_join("pegawai-table-wrapper", $page, $totalPages, "", $extraParams);
+    ?>
 </div>
 
 
