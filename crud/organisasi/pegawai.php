@@ -81,6 +81,19 @@ if (isset($_POST["type"])) {
 		exit();
 	}
 
+	if ($type === "toggle_active") {
+		$id = (int) $_POST["id_pegawai"];
+		$isActive = isset($_POST["is_active"]) && (int) $_POST["is_active"] === 1 ? 1 : 0;
+
+		$stmt = $db->prepare("UPDATE pegawai SET is_active = ? WHERE id_pegawai = ?");
+		$stmt->bind_param("ii", $isActive, $id);
+		$stmt->execute();
+		$stmt->close();
+		add_toast("success", "Status pegawai berhasil diperbarui");
+		header("Location: " . $redirectPath);
+		exit();
+	}
+
 	if ($type === "edit") {
 		$id = $_POST["id_pegawai"];
 		$nip = $_POST["nip"];

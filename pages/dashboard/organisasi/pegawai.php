@@ -227,7 +227,8 @@ if ($page > $totalPages) {
                 <th>Pangkat</th>
                 <th>Jabatan</th>
                 <th>Unit Kerja</th>
-                <th>Status</th>
+                <th>Status Pegawai</th>
+                <th>Aktif</th>
                 <th>Aksi</th>
             </tr>
         </thead>
@@ -258,6 +259,23 @@ if ($page > $totalPages) {
                         <td><?= htmlspecialchars($row["nama_jabatan"]) ?></td>
                         <td><?= htmlspecialchars($row["nama_unit"]) ?></td>
                         <td><?= htmlspecialchars($row["status_pegawai"]) ?></td>
+                        <td>
+                            <form
+							method="POST"
+							hx-post="/dashboard/organisasi/pegawai"
+							hx-target="#pegawai-row-<?= (int) $row["id_pegawai"] ?>"
+							hx-select="#pegawai-row-<?= (int) $row["id_pegawai"] ?>"
+							hx-swap="outerHTML transition:true"
+							hx-select-oob="#toast"
+						>
+                                <input type="hidden" name="type" value="toggle_active">
+                                <input type="hidden" name="id_pegawai" value="<?= (int) $row["id_pegawai"] ?>">
+                                <input type="hidden" name="is_active" value="<?= $row["is_active"] ? 0 : 1 ?>">
+                                <button type="submit" class="btn btn-sm <?= $row["is_active"] ? 'btn-success' : 'btn-ghost' ?>">
+                                    <?= $row["is_active"] ? 'Aktif' : 'Nonaktif' ?>
+                                </button>
+                            </form>
+                        </td>
                         <td>
                             <div class="flex gap-2">
                                 <button
