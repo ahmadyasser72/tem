@@ -58,7 +58,11 @@ $darah_opt = ["A", "B", "AB", "O"];
     	? "Edit Pegawai"
     	: "Tambah Pegawai" ?></h3>
 
-    <form method="POST" class="space-y-4" enctype="multipart/form-data">
+    <form hx-boost="true"
+			hx-target="main"
+			hx-select="main"
+			hx-swap="outerHTML transition:true scroll:top"
+      hx-select-oob="#toast" method="POST" class="space-y-4" enctype="multipart/form-data">
 
       <input type="hidden" name="type" value="<?= $editing
       	? "edit"

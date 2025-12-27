@@ -212,7 +212,10 @@ if ($keyword !== "") {
         </form>
         <h3 class="text-lg font-bold">Hapus Unit Kerja</h3>
         <p class="py-4">Yakin ingin menghapus unit kerja ini?</p>
-        <form method="POST">
+        <form hx-boost="true"
+			hx-target="main"
+			hx-select="main"
+			hx-swap="outerHTML" hx-select-oob="#toast" method="POST">
             <input type="hidden" name="type" value="delete">
             <input type="hidden" name="id_unit" id="delete_id">
             <div class="modal-action">

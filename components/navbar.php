@@ -10,7 +10,7 @@
 
   <div class="flex grow justify-end gap-1 px-2">
     <div class="flex items-stretch">
-      <a class="btn btn-ghost rounded-field">Button</a>
+      <?php $username = $_SESSION["user"]["username"] ?? "User"; ?>
 
       <div class="dropdown dropdown-end">
         <div tabindex="0" role="button" class="btn btn-ghost btn-circle">
@@ -19,14 +19,11 @@
         <ul
           tabindex="-1"
           class="menu dropdown-content bg-base-200 rounded-box z-1 mt-4.5 w-48 translate-x-4 p-2 shadow-sm">
-          <li class="menu-title">Username</li>
-
-          <li>
-            <a>
-              <iconify-icon icon="line-md:cog" width="16"></iconify-icon>
-              Settings
-            </a>
-          </li>
+          <li class="menu-title"><?php echo htmlspecialchars(
+          	$username,
+          	ENT_QUOTES,
+          	"UTF-8",
+          ); ?></li>
 
           <li>
             <details>
@@ -56,7 +53,7 @@
           </li>
 
           <li>
-            <a>
+            <a href="/logout">
               <iconify-icon icon="line-md:logout" width="16"></iconify-icon>
               Logout
             </a>

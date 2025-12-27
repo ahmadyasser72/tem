@@ -2,6 +2,20 @@
 
 require_once __DIR__ . "/router.php";
 
+if (session_status() === PHP_SESSION_NONE) {
+	session_start();
+}
+
+any("/login", "pages/login.php");
+
+$publicPaths = ["/login"];
+$currentPath = parse_url($_SERVER["REQUEST_URI"], PHP_URL_PATH) ?: "/";
+
+if (!in_array($currentPath, $publicPaths, true) && empty($_SESSION["user"])) {
+	header("Location: /login");
+	exit();
+}
+
 get("/dashboard", "pages/dashboard/index.php");
 
 $tables = ["pangkat", "jabatan", "unit_kerja", "pegawai"];
@@ -19,6 +33,28 @@ foreach ($tables as $table) {
 
 	post("/dashboard/organisasi/$table", "crud/organisasi/$table.php");
 }
+
+any("/logout", function () {
+	if (session_status() === PHP_SESSION_NONE) {
+		session_start();
+	}
+	$_SESSION = [];
+	if (ini_get("session.use_cookies")) {
+		$params = session_get_cookie_params();
+		setcookie(
+			session_name(),
+			"",
+			time() - 42000,
+			$params["path"],
+			$params["domain"],
+			$params["secure"],
+			$params["httponly"],
+		);
+	}
+	session_destroy();
+	header("Location: /login");
+	exit();
+});
 
 get("/fragments/chart/jabatan", "fragments/jabatan_chart.php");
 get("/fragments/chart/unit", "fragments/unit_chart.php");

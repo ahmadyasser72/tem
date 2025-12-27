@@ -2,6 +2,7 @@
 
 if (isset($_POST["type"])) {
 	$type = $_POST["type"];
+	$redirectPath = parse_url($_SERVER["REQUEST_URI"], PHP_URL_PATH) ?: "/";
 
 	if ($type === "create") {
 		$kode = $_POST["kode_pangkat"];
@@ -15,8 +16,8 @@ if (isset($_POST["type"])) {
 		$stmt->bind_param("ssss", $kode, $nama, $golongan, $keterangan);
 		$stmt->execute();
 		$stmt->close();
-
-		header("Location: pangkat.php");
+		add_toast("success", "Pangkat berhasil ditambahkan");
+		header("Location: " . $redirectPath);
 		exit();
 	}
 
@@ -33,8 +34,8 @@ if (isset($_POST["type"])) {
 		$stmt->bind_param("ssssi", $kode, $nama, $golongan, $keterangan, $id);
 		$stmt->execute();
 		$stmt->close();
-
-		header("Location: pangkat.php");
+		add_toast("success", "Pangkat berhasil diperbarui");
+		header("Location: " . $redirectPath);
 		exit();
 	}
 
@@ -45,8 +46,8 @@ if (isset($_POST["type"])) {
 		$stmt->bind_param("i", $id);
 		$stmt->execute();
 		$stmt->close();
-
-		header("Location: pangkat.php");
+		add_toast("success", "Pangkat berhasil dihapus");
+		header("Location: " . $redirectPath);
 		exit();
 	}
 }

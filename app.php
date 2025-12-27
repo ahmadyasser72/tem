@@ -1,5 +1,9 @@
 <?php
 
+if (session_status() === PHP_SESSION_NONE) {
+	session_start();
+}
+
 require_once __DIR__ . "/database.php";
 require_once __DIR__ . "/utilities.php";
 require_once __DIR__ . "/vendor/autoload.php";
@@ -8,6 +12,10 @@ ob_start();
 require_once __DIR__ . "/routes.php";
 $page = ob_get_clean();
 $title = htmlentities($title);
+$toasts = get_and_clear_toasts();
+
+$currentPath = parse_url($_SERVER["REQUEST_URI"], PHP_URL_PATH) ?: "/";
+$isLoginPage = $currentPath === "/login";
 ?>
 
 <!DOCTYPE html>
@@ -43,6 +51,13 @@ $title = htmlentities($title);
       if (element instanceof HTMLDialogElement) {
         element.showModal();
         element.addEventListener("close", () => element.remove())
+      }
+
+      if (element.matches("#toast")) {
+        const toasts = Array.from(element.children);
+        toasts.forEach((toast, idx) => {
+          setTimeout(() => toast.remove(), 5000 + idx * 1500)
+        })
       }
     })
 
@@ -105,20 +120,47 @@ $title = htmlentities($title);
 </head>
 
 <body>
-  <div class="drawer lg:drawer-open">
-    <input id="app-drawer" type="checkbox" class="drawer-toggle" />
-    <div class="drawer-content flex min-h-screen flex-col p-2">
-      <?php require_once __DIR__ . "/components/navbar.php"; ?>
+	<?php if ($isLoginPage): ?>
+		<?= $page ?>
+	<?php else: ?>
+		<div class="drawer lg:drawer-open">
+			<input id="app-drawer" type="checkbox" class="drawer-toggle" />
+			<div class="drawer-content flex min-h-screen flex-col p-2">
+				<?php require_once __DIR__ . "/components/navbar.php"; ?>
 
-      <div class="flex-1 pt-2">
-        <main class="rounded-box min-h-full p-4 shadow-sm">
-          <?= $page ?>
-        </main>
-      </div>
-    </div>
+				<div class="flex-1 pt-2">
+					<main class="rounded-box min-h-full p-4 shadow-sm">
+						<?= $page ?>
+					</main>
+				</div>
+			</div>
 
-    <?php require_once __DIR__ . "/components/sidebar.php"; ?>
-  </div>
+			<?php require_once __DIR__ . "/components/sidebar.php"; ?>
+		</div>
+	<?php endif; ?>
+
+	<?php if (!empty($toasts)): ?>
+		<div id="toast" class="toast toast-bottom sm:toast-top toast-center">
+			<?php foreach ($toasts as $toast):
+
+   	$type = $toast["type"] ?? "info";
+   	$message = $toast["message"] ?? "";
+   	$alertClass = match ($type) {
+   		"success" => "alert-success",
+   		"error" => "alert-error",
+   		"warning" => "alert-warning",
+   		default => "alert-info",
+   	};
+   	?>
+				<div class="alert <?= $alertClass ?>">
+					<span><?= h($message) ?></span>
+				</div>
+			<?php
+   endforeach; ?>
+		</div>
+  <?php else: ?>
+    <div id="toast"></div>
+	<?php endif; ?>
 </body>
 
 </html>

@@ -40,7 +40,10 @@ $parents = $db
       <?= $editing ? "Edit Jabatan" : "Tambah Jabatan" ?>
     </h3>
 
-    <form method="POST" class="space-y-4">
+    <form hx-boost="true"
+			hx-target="main"
+			hx-select="main"
+			hx-swap="outerHTML transition:true scroll:top" hx-select-oob="#toast" method="POST" class="space-y-4">
 
       <input type="hidden" name="type" value="<?= $editing
       	? "edit"

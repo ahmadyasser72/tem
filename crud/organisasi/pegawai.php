@@ -2,6 +2,7 @@
 
 if (isset($_POST["type"])) {
 	$type = $_POST["type"];
+	$redirectPath = parse_url($_SERVER["REQUEST_URI"], PHP_URL_PATH) ?: "/";
 
 	if ($type === "create") {
 		$nip = $_POST["nip"];
@@ -75,8 +76,8 @@ if (isset($_POST["type"])) {
 
 		$stmt->execute();
 		$stmt->close();
-
-		header("Location: pegawai.php");
+		add_toast("success", "Pegawai berhasil ditambahkan");
+		header("Location: " . $redirectPath);
 		exit();
 	}
 
@@ -161,8 +162,8 @@ if (isset($_POST["type"])) {
 
 		$stmt->execute();
 		$stmt->close();
-
-		header("Location: pegawai.php");
+		add_toast("success", "Pegawai berhasil diperbarui");
+		header("Location: " . $redirectPath);
 		exit();
 	}
 
@@ -186,8 +187,8 @@ if (isset($_POST["type"])) {
 		$stmt->bind_param("i", $id);
 		$stmt->execute();
 		$stmt->close();
-
-		header("Location: pegawai.php");
+		add_toast("success", "Pegawai berhasil dihapus");
+		header("Location: " . $redirectPath);
 		exit();
 	}
 }

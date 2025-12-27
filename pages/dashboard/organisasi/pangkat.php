@@ -169,7 +169,10 @@ if ($keyword !== "") {
         <h3 class="text-lg font-bold">Hapus Pangkat</h3>
         <p class="py-4">Yakin ingin menghapus pangkat ini?</p>
 
-        <form method="POST">
+        <form hx-boost="true"
+			hx-target="main"
+			hx-select="main"
+			hx-swap="outerHTML" hx-select-oob="#toast" method="POST">
             <input type="hidden" name="type" value="delete">
             <input type="hidden" name="id_pangkat" id="delete_id">
 

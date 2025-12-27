@@ -182,7 +182,10 @@ if ($keyword !== "") {
         <h3 class="text-lg font-bold">Hapus Jabatan</h3>
         <p class="py-4">Yakin ingin menghapus jabatan ini?</p>
 
-        <form method="POST">
+        <form hx-boost="true"
+			hx-target="main"
+			hx-select="main"
+			hx-swap="outerHTML" hx-select-oob="#toast" method="POST">
             <input type="hidden" name="type" value="delete">
             <input type="hidden" name="id_jabatan" id="delete_id">
 

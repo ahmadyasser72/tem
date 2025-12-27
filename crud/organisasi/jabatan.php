@@ -2,6 +2,7 @@
 
 if (isset($_POST["type"])) {
 	$type = $_POST["type"];
+	$redirectPath = parse_url($_SERVER["REQUEST_URI"], PHP_URL_PATH) ?: "/";
 
 	// helper hitung level
 	function hitungLevel($db, $parent_id)
@@ -54,8 +55,8 @@ if (isset($_POST["type"])) {
 
 		$stmt->execute();
 		$stmt->close();
-
-		header("Location: jabatan.php");
+		add_toast("success", "Jabatan berhasil ditambahkan");
+		header("Location: " . $redirectPath);
 		exit();
 	}
 
@@ -100,8 +101,8 @@ if (isset($_POST["type"])) {
 
 		$stmt->execute();
 		$stmt->close();
-
-		header("Location: jabatan.php");
+		add_toast("success", "Jabatan berhasil diperbarui");
+		header("Location: " . $redirectPath);
 		exit();
 	}
 
@@ -112,8 +113,8 @@ if (isset($_POST["type"])) {
 		$stmt->bind_param("i", $id);
 		$stmt->execute();
 		$stmt->close();
-
-		header("Location: jabatan.php");
+		add_toast("success", "Jabatan berhasil dihapus");
+		header("Location: " . $redirectPath);
 		exit();
 	}
 }
