@@ -50,7 +50,9 @@ $items = [
       	" ",
       	array_filter([
       		"is-drawer-close:tooltip is-drawer-close:tooltip-right",
-      		$_SERVER["REQUEST_URI"] === $item["url"] ? "menu-active" : "",
+      		strtok($_SERVER["REQUEST_URI"], "?") === $item["url"]
+      			? "menu-active"
+      			: "",
       	]),
       ) ?>"
 						data-tip="<?= htmlspecialchars($item["label"]) ?>">

@@ -35,12 +35,6 @@ $isLoginPage = $currentPath === "/login";
   <script src="https://d3js.org/d3.v7.min.js"></script>
 
   <script>
-    document.addEventListener("DOMContentLoaded", () => {
-      const theme = localStorage.getItem("theme");
-      if (!!theme)
-        document.querySelector(`input[value=${theme}]`).checked = true
-    })
-
     document.addEventListener("input", (e) => {
       if (e.target instanceof HTMLInputElement && e.target.matches(".theme-controller")) {
         localStorage.setItem("theme", e.target.value);
@@ -50,15 +44,35 @@ $isLoginPage = $currentPath === "/login";
     htmx.onLoad((element)=> {
       if (element instanceof HTMLDialogElement) {
         element.showModal();
-        element.addEventListener("close", () => element.remove())
+        element.addEventListener("close", () => {
+          element.addEventListener("transitionend", () => element.remove())
+        })
+
+        element.addEventListener("click", (e) => {
+          if (e.target && e.target.textContent === "Batal") {
+            e.preventDefault();
+            element.close();
+          }
+        });
       }
 
-      if (element.matches("#toast")) {
-        const toasts = Array.from(element.children);
+      const toast =
+        element.matches("#toast") ? element : element.querySelector("#toast")
+      if (toast) {
+        const toasts = Array.from(toast.children);
         toasts.forEach((toast, idx) => {
-          setTimeout(() => toast.remove(), 5000 + idx * 1500)
+          toast.addEventListener("transitionend", () => toast.remove())
+          setTimeout(
+            () => toast.classList.add("transition-opacity", "opacity-0"),
+            5000 + idx * 1500
+          )
         })
       }
+
+      const theme = localStorage.getItem("theme");
+      const activeThemeController = element.querySelector(`input[value=${theme}]`);
+      if (!!theme && activeThemeController)
+        activeThemeController.checked = true
     })
 
     function saveSvgAsPng(selector, name = "image.png") {

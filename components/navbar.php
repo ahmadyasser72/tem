@@ -6,7 +6,11 @@
     <iconify-icon icon="line-md:menu-unfold-right" width="none"></iconify-icon>
   </label>
 
-  <div id="navbar-title" class="ps-4" hx-swap-oob="true"><?= $title ?></div>
+  <div id="navbar-title" class="ps-4" hx-swap-oob="true">
+    DamkarHub
+    &bullet;
+    <?= $title ?>
+  </div>
 
   <div class="flex grow justify-end gap-1 px-2">
     <div class="flex items-stretch">

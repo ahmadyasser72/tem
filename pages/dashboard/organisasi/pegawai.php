@@ -14,6 +14,15 @@ if (($_GET["print"] ?? "") == "1") {
 	$keyword = trim($_GET["search"] ?? "");
 	if ($keyword !== "") {
 		$like = "%$keyword%";
+
+		$active = null;
+		if (
+			strtolower($keyword) == "aktif" ||
+			strtolower($keyword) == "nonaktif"
+		) {
+			$active = (int) (strtolower($keyword) == "aktif");
+		}
+
 		$stmt = $db->prepare("
         SELECT
             pg.foto_profil,
@@ -32,10 +41,26 @@ if (($_GET["print"] ?? "") == "1") {
         LEFT JOIN unit_kerja u ON pg.id_unit = u.id_unit
         LEFT JOIN jabatan j ON pg.id_jabatan = j.id_jabatan
         LEFT JOIN pangkat p ON pg.id_pangkat = p.id_pangkat
-        WHERE pg.nip LIKE ? OR pg.nama_lengkap LIKE ? OR u.nama_unit LIKE ?
+        WHERE
+            pg.nip LIKE ?
+            OR pg.nama_lengkap LIKE ?
+            OR pg.status_pegawai LIKE ?
+            OR p.nama_pangkat LIKE ?
+            OR j.nama_jabatan LIKE ?
+            OR u.nama_unit LIKE ?
+            OR pg.is_active = ?
         ORDER BY pg.id_pegawai DESC
     ");
-		$stmt->bind_param("sss", $like, $like, $like);
+		$stmt->bind_param(
+			"ssssssi",
+			$like,
+			$like,
+			$like,
+			$like,
+			$like,
+			$like,
+			$active,
+		);
 		$stmt->execute();
 		$result = $stmt->get_result();
 	} else {
@@ -146,13 +171,36 @@ if ($keyword !== "") {
 	$search = true;
 	$like = "%$keyword%";
 
+	$active = null;
+	if (strtolower($keyword) == "aktif" || strtolower($keyword) == "nonaktif") {
+		$active = (int) (strtolower($keyword) == "aktif");
+	}
+
 	$countStmt = $db->prepare("
         SELECT COUNT(*) AS total
         FROM pegawai p
+        LEFT JOIN pangkat pg ON p.id_pangkat = pg.id_pangkat
+        LEFT JOIN jabatan j ON p.id_jabatan = j.id_jabatan
         LEFT JOIN unit_kerja u ON p.id_unit = u.id_unit
-        WHERE p.nip LIKE ? OR p.nama_lengkap LIKE ? OR u.nama_unit LIKE ?
+        WHERE
+            p.nip LIKE ?
+            OR p.nama_lengkap LIKE ?
+            OR p.status_pegawai LIKE ?
+            OR pg.nama_pangkat LIKE ?
+            OR j.nama_jabatan LIKE ?
+            OR u.nama_unit LIKE ?
+            OR p.is_active = ?
     ");
-	$countStmt->bind_param("sss", $like, $like, $like);
+	$countStmt->bind_param(
+		"ssssssi",
+		$like,
+		$like,
+		$like,
+		$like,
+		$like,
+		$like,
+		$active,
+	);
 	$countStmt->execute();
 	$countResult = $countStmt->get_result();
 	$totalRows = (int) ($countResult->fetch_assoc()["total"] ?? 0);
@@ -164,11 +212,29 @@ if ($keyword !== "") {
         LEFT JOIN pangkat pg ON p.id_pangkat = pg.id_pangkat
         LEFT JOIN jabatan j ON p.id_jabatan = j.id_jabatan
         LEFT JOIN unit_kerja u ON p.id_unit = u.id_unit
-        WHERE p.nip LIKE ? OR p.nama_lengkap LIKE ? OR u.nama_unit LIKE ?
+        WHERE
+            p.nip LIKE ?
+            OR p.nama_lengkap LIKE ?
+            OR p.status_pegawai LIKE ?
+            OR pg.nama_pangkat LIKE ?
+            OR j.nama_jabatan LIKE ?
+            OR u.nama_unit LIKE ?
+            OR p.is_active = ?
         ORDER BY p.id_pegawai DESC
         LIMIT ? OFFSET ?
     ");
-	$stmt->bind_param("sssii", $like, $like, $like, $perPage, $offset);
+	$stmt->bind_param(
+		"ssssssiii",
+		$like,
+		$like,
+		$like,
+		$like,
+		$like,
+		$like,
+		$active,
+		$perPage,
+		$offset,
+	);
 	$stmt->execute();
 	$rows = $stmt->get_result();
 } else {
@@ -206,14 +272,18 @@ if ($page > $totalPages) {
         <a
 			id="pegawai-print-button"
 			target="_blank"
-			href="?print=1<?= $keyword !== '' ? '&search=' . urlencode($keyword) : '' ?>"
+			href="?print=1<?= $keyword !== "" ? "&search=" . urlencode($keyword) : "" ?>"
 			class="join-item btn btn-secondary"
 		>
 			Laporan pegawai
 		</a>
     </div>
 
-	<?php render_search_input('pegawai-table-wrapper', $keyword, 'pegawai-print-button'); ?>
+	<?php render_search_input(
+ 	"pegawai-table-wrapper",
+ 	$keyword,
+ 	"pegawai-print-button",
+ ); ?>
 </div>
 
 <div id="pegawai-table-wrapper" class="overflow-x-auto rounded-box border border-base-content/5 bg-base-100 mt-4">
@@ -236,7 +306,7 @@ if ($page > $totalPages) {
             <?php $idx = 1 + $offset; ?>
 			<?php if ($rows && $rows->num_rows > 0): ?>
 				<?php while ($row = $rows->fetch_assoc()): ?>
-					<tr <?= view_transition_attrs('pegawai-row', $row["id_pegawai"]) ?>>
+					<tr <?= view_transition_attrs("pegawai-row", $row["id_pegawai"]) ?>>
                         <td>
                             <div class="size-24">
                                 <img src="/uploads/pegawai/<?= $row[
@@ -269,10 +339,22 @@ if ($page > $totalPages) {
 							hx-select-oob="#toast"
 						>
                                 <input type="hidden" name="type" value="toggle_active">
-                                <input type="hidden" name="id_pegawai" value="<?= (int) $row["id_pegawai"] ?>">
-                                <input type="hidden" name="is_active" value="<?= $row["is_active"] ? 0 : 1 ?>">
-                                <button type="submit" class="btn btn-sm <?= $row["is_active"] ? 'btn-success' : 'btn-ghost' ?>">
-                                    <?= $row["is_active"] ? 'Aktif' : 'Nonaktif' ?>
+                                <input type="hidden" name="id_pegawai" value="<?= (int) $row[
+                                	"id_pegawai"
+                                ] ?>">
+                                <input type="hidden" name="is_active" value="<?= $row[
+                                	"is_active"
+                                ]
+                                	? 0
+                                	: 1 ?>">
+                                <button type="submit" class="btn btn-sm <?= $row[
+                                	"is_active"
+                                ]
+                                	? "btn-success"
+                                	: "btn-ghost" ?>">
+                                    <?= $row["is_active"]
+                                    	? "Aktif"
+                                    	: "Nonaktif" ?>
                                 </button>
                             </form>
                         </td>
@@ -297,19 +379,25 @@ if ($page > $totalPages) {
             <?php else: ?>
                 <tr>
                     <td colspan="9" class="text-center"><?= $search
-	                    ? "Pegawai tidak ditemukan."
-	                    : "Belum ada data pegawai." ?></td>
+                    	? "Pegawai tidak ditemukan."
+                    	: "Belum ada data pegawai." ?></td>
                 </tr>
             <?php endif; ?>
         </tbody>
     </table>
 
     <?php
-	$extraParams = [];
-	if ($keyword !== "") {
-		$extraParams["search"] = $keyword;
-	}
-	render_pagination_join("pegawai-table-wrapper", $page, $totalPages, "", $extraParams);
+    $extraParams = [];
+    if ($keyword !== "") {
+    	$extraParams["search"] = $keyword;
+    }
+    render_pagination_join(
+    	"pegawai-table-wrapper",
+    	$page,
+    	$totalPages,
+    	"",
+    	$extraParams,
+    );
     ?>
 </div>
 
