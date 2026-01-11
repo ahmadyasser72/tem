@@ -74,7 +74,7 @@ if (($_GET["print"] ?? "") == "1") {
 	exit();
 }
 
-$title = "Organisasi - Jabatan";
+$title = "Kelola Jabatan";
 
 $search = false;
 $keyword = trim($_GET["search"] ?? "");
@@ -117,7 +117,9 @@ if ($keyword !== "") {
 		$totalRows = (int) ($countResult->fetch_assoc()["total"] ?? 0);
 	}
 
-	$rows = $db->query("SELECT * FROM jabatan ORDER BY id_jabatan ASC LIMIT $perPage OFFSET $offset");
+	$rows = $db->query(
+		"SELECT * FROM jabatan ORDER BY id_jabatan ASC LIMIT $perPage OFFSET $offset",
+	);
 }
 
 $totalPages = max(1, (int) ceil($totalRows / $perPage));
@@ -138,7 +140,7 @@ if ($page > $totalPages) {
         <a
 			id="jabatan-print-button"
 			target="_blank"
-			href="?print=1<?= $keyword !== '' ? '&search=' . urlencode($keyword) : '' ?>"
+			href="?print=1<?= $keyword !== "" ? "&search=" . urlencode($keyword) : "" ?>"
 			class="join-item btn btn-secondary"
 		>
 			Laporan jabatan
@@ -152,7 +154,11 @@ if ($page > $totalPages) {
             >Hirarki jabatan</button>
     </div>
 
-	<?php render_search_input('jabatan-table-wrapper', $keyword, 'jabatan-print-button'); ?>
+	<?php render_search_input(
+ 	"jabatan-table-wrapper",
+ 	$keyword,
+ 	"jabatan-print-button",
+ ); ?>
 </div>
 
 <div id="jabatan-table-wrapper" class="overflow-x-auto rounded-box border border-base-content/5 bg-base-100 mt-4">
@@ -171,7 +177,7 @@ if ($page > $totalPages) {
         <tbody>
 			<?php if ($rows && $rows->num_rows > 0): ?>
 				<?php while ($row = $rows->fetch_assoc()): ?>
-					<tr <?= view_transition_attrs('jabatan-row', $row["id_jabatan"]) ?>>
+					<tr <?= view_transition_attrs("jabatan-row", $row["id_jabatan"]) ?>>
                         <th><?= $row["id_jabatan"] ?></th>
                         <td><?= htmlspecialchars($row["kode_jabatan"]) ?></td>
                         <td><?= htmlspecialchars($row["nama_jabatan"]) ?></td>
@@ -200,8 +206,8 @@ if ($page > $totalPages) {
                 <tr>
                     <td colspan="6" class="text-center">
                         <?= $search
-	                        ? "Jabatan tidak ditemukan."
-	                        : "Belum ada data jabatan." ?>
+                        	? "Jabatan tidak ditemukan."
+                        	: "Belum ada data jabatan." ?>
                     </td>
                 </tr>
             <?php endif; ?>
@@ -209,11 +215,17 @@ if ($page > $totalPages) {
     </table>
 
     <?php
-	$extraParams = [];
-	if ($keyword !== "") {
-		$extraParams["search"] = $keyword;
-	}
-	render_pagination_join("jabatan-table-wrapper", $page, $totalPages, "", $extraParams);
+    $extraParams = [];
+    if ($keyword !== "") {
+    	$extraParams["search"] = $keyword;
+    }
+    render_pagination_join(
+    	"jabatan-table-wrapper",
+    	$page,
+    	$totalPages,
+    	"",
+    	$extraParams,
+    );
     ?>
 </div>
 

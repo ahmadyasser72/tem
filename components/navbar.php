@@ -6,9 +6,13 @@
     <iconify-icon icon="line-md:menu-unfold-right" width="none"></iconify-icon>
   </label>
 
-  <div id="navbar-title" class="ps-4" hx-swap-oob="true">
+  <div id="navbar-title" class="ps-4 inline-flex items-center" hx-swap-oob="true">
+    <a href="/dashboard" class="btn btn-circle -ml-4 mr-1">
+      <img src="/images/dpkp.png" alt="DPKP" class="scale-120">
+    </a>
+
     DamkarHub
-    &bullet;
+    &mid;
     <?= $title ?>
   </div>
 

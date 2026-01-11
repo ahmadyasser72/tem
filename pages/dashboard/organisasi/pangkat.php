@@ -70,7 +70,7 @@ if (($_GET["print"] ?? "") == "1") {
 	exit();
 }
 
-$title = "Organisasi - Pangkat";
+$title = "Kelola Pangkat";
 
 $search = false;
 $keyword = trim($_GET["search"] ?? "");
@@ -135,14 +135,18 @@ if ($page > $totalPages) {
         <a
 			id="pangkat-print-button"
 			target="_blank"
-			href="?print=1<?= $keyword !== '' ? '&search=' . urlencode($keyword) : '' ?>"
+			href="?print=1<?= $keyword !== "" ? "&search=" . urlencode($keyword) : "" ?>"
 			class="join-item btn btn-secondary"
 		>
 			Laporan pangkat
 		</a>
     </div>
 
-	<?php render_search_input('pangkat-table-wrapper', $keyword, 'pangkat-print-button'); ?>
+	<?php render_search_input(
+ 	"pangkat-table-wrapper",
+ 	$keyword,
+ 	"pangkat-print-button",
+ ); ?>
 </div>
 
 <div id="pangkat-table-wrapper" class="overflow-x-auto rounded-box border border-base-content/5 bg-base-100 mt-4">
@@ -160,7 +164,7 @@ if ($page > $totalPages) {
         <tbody>
 			<?php if ($rows && $rows->num_rows > 0): ?>
 				<?php while ($row = $rows->fetch_assoc()): ?>
-					<tr <?= view_transition_attrs('pangkat-row', $row["id_pangkat"]) ?>>
+					<tr <?= view_transition_attrs("pangkat-row", $row["id_pangkat"]) ?>>
                         <th><?= $row["id_pangkat"] ?></th>
                         <td><?= htmlspecialchars($row["kode_pangkat"]) ?></td>
                         <td><?= htmlspecialchars($row["nama_pangkat"]) ?></td>
@@ -187,8 +191,8 @@ if ($page > $totalPages) {
                 <tr>
                     <td colspan="5" class="text-center">
                         <?= $search
-	                        ? "Pangkat tidak ditemukan."
-	                        : "Belum ada data pangkat." ?>
+                        	? "Pangkat tidak ditemukan."
+                        	: "Belum ada data pangkat." ?>
                     </td>
                 </tr>
             <?php endif; ?>
@@ -197,11 +201,17 @@ if ($page > $totalPages) {
     </table>
 
     <?php
-	$extraParams = [];
-	if ($keyword !== "") {
-		$extraParams["search"] = $keyword;
-	}
-	render_pagination_join("pangkat-table-wrapper", $page, $totalPages, "", $extraParams);
+    $extraParams = [];
+    if ($keyword !== "") {
+    	$extraParams["search"] = $keyword;
+    }
+    render_pagination_join(
+    	"pangkat-table-wrapper",
+    	$page,
+    	$totalPages,
+    	"",
+    	$extraParams,
+    );
     ?>
 </div>
 

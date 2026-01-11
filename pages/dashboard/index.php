@@ -87,7 +87,7 @@ $unitTypeData = $db
 	->fetch_all(MYSQLI_ASSOC);
 ?>
 
-<h1 class="text-3xl font-bold mb-6 text-center">Dashboard Pegawai Pemadam Kebakaran</h1>
+<h1 class="text-3xl font-bold mb-6 text-center">Dashboard Pegawai DPKP Banjar</h1>
 
 <div class="grid md:grid-cols-2 lg:grid-cols-5 gap-6">
 

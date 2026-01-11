@@ -1,6 +1,5 @@
 <?php
 
-
 if (($_GET["print"] ?? "") == "1") {
 	$mpdf = new \Mpdf\Mpdf([
 		"format" => "A4",
@@ -17,7 +16,7 @@ if (($_GET["print"] ?? "") == "1") {
 	if ($keyword !== "") {
 		$like = "%$keyword%";
 
-		$stmt = $db->prepare(" 
+		$stmt = $db->prepare("
         SELECT
             u.kode_unit,
             u.nama_unit,
@@ -116,7 +115,7 @@ if (($_GET["print"] ?? "") == "1") {
 	exit();
 }
 
-$title = "Organisasi - Unit Kerja";
+$title = "Kelola Unit Kerja";
 
 $search = false;
 $keyword = trim($_GET["search"] ?? "");
@@ -186,7 +185,7 @@ if ($page > $totalPages) {
         <a
 			id="unit-kerja-print-button"
 			target="_blank"
-			href="?print=1<?= $keyword !== '' ? '&search=' . urlencode($keyword) : '' ?>"
+			href="?print=1<?= $keyword !== "" ? "&search=" . urlencode($keyword) : "" ?>"
 			class="join-item btn btn-secondary"
 		>
 			Laporan unit kerja
@@ -200,7 +199,11 @@ if ($page > $totalPages) {
             >Hirarki unit kerja</button>
     </div>
 
-	<?php render_search_input('unit-kerja-table-wrapper', $keyword, 'unit-kerja-print-button'); ?>
+	<?php render_search_input(
+ 	"unit-kerja-table-wrapper",
+ 	$keyword,
+ 	"unit-kerja-print-button",
+ ); ?>
 </div>
 
 <div id="unit-kerja-table-wrapper" class="overflow-x-auto rounded-box border border-base-content/5 bg-base-100 mt-4">
@@ -219,7 +222,7 @@ if ($page > $totalPages) {
         <tbody>
 			<?php if ($rows && $rows->num_rows > 0): ?>
 				<?php while ($row = $rows->fetch_assoc()): ?>
-					<tr <?= view_transition_attrs('unit-row', $row["id_unit"]) ?>>
+					<tr <?= view_transition_attrs("unit-row", $row["id_unit"]) ?>>
                         <th><?= $row["id_unit"] ?></th>
                         <td><?= htmlspecialchars($row["kode_unit"]) ?></td>
                         <td><?= htmlspecialchars($row["nama_unit"]) ?></td>
@@ -249,19 +252,25 @@ if ($page > $totalPages) {
             <?php else: ?>
                 <tr>
                     <td colspan="7" class="text-center"><?= $search
-	                    ? "Unit kerja tidak ditemukan."
-	                    : "Belum ada data unit kerja." ?></td>
+                    	? "Unit kerja tidak ditemukan."
+                    	: "Belum ada data unit kerja." ?></td>
                 </tr>
             <?php endif; ?>
         </tbody>
     </table>
 
     <?php
-	$extraParams = [];
-	if ($keyword !== "") {
-		$extraParams["search"] = $keyword;
-	}
-	render_pagination_join("unit-kerja-table-wrapper", $page, $totalPages, "", $extraParams);
+    $extraParams = [];
+    if ($keyword !== "") {
+    	$extraParams["search"] = $keyword;
+    }
+    render_pagination_join(
+    	"unit-kerja-table-wrapper",
+    	$page,
+    	$totalPages,
+    	"",
+    	$extraParams,
+    );
     ?>
 </div>
 

@@ -158,7 +158,7 @@ if (($_GET["print"] ?? "") == "1") {
 	exit();
 }
 
-$title = "Organisasi - Pegawai";
+$title = "Kelola Pegawai";
 
 $search = false;
 $keyword = trim($_GET["search"] ?? "");
