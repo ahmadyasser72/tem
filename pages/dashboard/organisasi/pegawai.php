@@ -10,19 +10,36 @@ if (($_GET["print"] ?? "") == "1") {
 		"orientation" => "landscape",
 	]);
 
+	$kop = '
+        <table width="100%" style="border-bottom:2px solid black;">
+            <tr>
+                <td width="15%">
+                    <img src="images/kabupaten-banjar.png" width="80">
+                </td>
+                <td width="70%" align="center">
+                    <h3 style="margin:0;">PEMERINTAH KABUPATEN BANJAR</h3>
+                    <h3 style="margin:0;">DINAS PEMADAM KEBAKARAN DAN PENYELAMATAN</h3>
+                    <p style="margin:0;font-size:10pt;">
+                        Jl. A. Yani Nomor. 6 KM 40 Kelurahan Keraton Kode Pos 70611 Telp. 0823-5044-7112<br>
+                        Martapura - Kalimantan Selatan<br>
+                        Website: https://dpkp.banjarkab.go.id / Email: dpkp@banjarkab.go.id
+                    </p>
+                </td>
+                <td width="15%" align="right">
+                    <img src="images/dpkp.png" width="90">
+                </td>
+            </tr>
+        </table>
+    ';
+	$mpdf->WriteHTML($kop);
+	$mpdf->WriteHTML(
+		'<h2 style="text-align:center;margin-top:15px;">LAPORAN DATA PEGAWAI</h2>',
+	);
+
 	// ambil data pegawai + unit + jabatan + pangkat, dengan filter jika ada keyword
 	$keyword = trim($_GET["search"] ?? "");
 	if ($keyword !== "") {
 		$like = "%$keyword%";
-
-		$active = null;
-		if (
-			strtolower($keyword) == "aktif" ||
-			strtolower($keyword) == "nonaktif"
-		) {
-			$active = (int) (strtolower($keyword) == "aktif");
-		}
-
 		$stmt = $db->prepare("
         SELECT
             pg.foto_profil,
@@ -48,7 +65,7 @@ if (($_GET["print"] ?? "") == "1") {
             OR p.nama_pangkat LIKE ?
             OR j.nama_jabatan LIKE ?
             OR u.nama_unit LIKE ?
-            OR pg.is_active = ?
+            AND pg.is_active = 1
         ORDER BY pg.id_pegawai DESC
     ");
 		$stmt->bind_param(
@@ -82,6 +99,7 @@ if (($_GET["print"] ?? "") == "1") {
         LEFT JOIN unit_kerja u ON pg.id_unit = u.id_unit
         LEFT JOIN jabatan j ON pg.id_jabatan = j.id_jabatan
         LEFT JOIN pangkat p ON pg.id_pangkat = p.id_pangkat
+        WHERE pg.is_active = 1
         ORDER BY pg.id_pegawai DESC
     ";
 		$result = $db->query($sql);
@@ -89,14 +107,13 @@ if (($_GET["print"] ?? "") == "1") {
 
 	// buat HTML tabel
 	$html = '
-        <h2 style="text-align:center;">Laporan Pegawai</h2>
         <table border="1" cellspacing="0" cellpadding="5" width="100%">
             <thead style="background-color:#0066CC; color:white;">
                 <tr>
                     <th>Foto</th>
                     <th>NIP</th>
                     <th>Nama</th>
-                    <th>JK</th>
+                    <th>Jenis Kelamin</th>
                     <th>Status Kawin</th>
                     <th>Unit Kerja</th>
                     <th>Jabatan</th>

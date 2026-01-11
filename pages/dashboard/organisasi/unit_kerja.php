@@ -8,8 +8,33 @@ if (($_GET["print"] ?? "") == "1") {
 		"margin_top" => 15,
 		"margin_bottom" => 15,
 		"orientation" => "landscape",
-		"debug" => true,
 	]);
+
+	$kop = '
+        <table width="100%" style="border-bottom:2px solid black;">
+            <tr>
+                <td width="15%">
+                    <img src="images/kabupaten-banjar.png" width="80">
+                </td>
+                <td width="70%" align="center">
+                    <h3 style="margin:0;">PEMERINTAH KABUPATEN BANJAR</h3>
+                    <h3 style="margin:0;">DINAS PEMADAM KEBAKARAN DAN PENYELAMATAN</h3>
+                    <p style="margin:0;font-size:10pt;">
+                        Jl. A. Yani Nomor. 6 KM 40 Kelurahan Keraton Kode Pos 70611 Telp. 0823-5044-7112<br>
+                        Martapura - Kalimantan Selatan<br>
+                        Website: https://dpkp.banjarkab.go.id / Email: dpkp@banjarkab.go.id
+                    </p>
+                </td>
+                <td width="15%" align="right">
+                    <img src="images/dpkp.png" width="90">
+                </td>
+            </tr>
+        </table>
+    ';
+	$mpdf->WriteHTML($kop);
+	$mpdf->WriteHTML(
+		'<h2 style="text-align:center;margin-top:15px;">LAPORAN DATA UNIT KERJA</h2>',
+	);
 
 	// ambil data unit kerja + kepala unit + jumlah pegawai, dengan filter jika ada keyword
 	$keyword = trim($_GET["search"] ?? "");
@@ -58,7 +83,6 @@ if (($_GET["print"] ?? "") == "1") {
 
 	// buat HTML tabel
 	$html = '
-        <h2 style="text-align:center;">Laporan Unit Kerja</h2>
         <table border="1" cellspacing="0" cellpadding="5" width="100%">
             <thead style="background-color:#0066CC; color:white;">
                 <tr>
