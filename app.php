@@ -54,6 +54,14 @@ $isLoginPage = $currentPath === "/login";
             element.close();
           }
         });
+
+        const form = element.querySelector("form[hx-boost]");
+        if (form instanceof HTMLFormElement) {
+          form.addEventListener("submit", () => {
+            element.close()
+            element.addEventListener("transitionend", () => element.remove())
+          })
+        }
       }
 
       const toast =
